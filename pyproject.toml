@@ -1,0 +1,104 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scratchagent"
+version = "0.1.0"
+description = "A minimal AI Agent from scratch for educational purposes"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13.0, <3.14"
+authors =[
+    {name = "YouliangXia", email = "youliangxia0505@gmail.com"}
+]
+keywords = ["agents", "scratch-agent", "ai", "llm", "educational"]
+
+
+dependencies = [
+    "python-dotenv>=1.2.3",
+    "pydantic>=2.0.0",
+    "openai>=2.46.0",
+    "faiss-cpu>=1.15.0",
+    "fastmcp>=3.4.6",
+    "litellm>=1.93.0",
+    "mcp[cli]>=1.29.0",
+    "tavily-python>=0.7.27",
+    "html2text>=2025.4.15",
+    "lxml>=6.1.1",
+    "scikit-learn>=1.9.0",
+    "pymupdf>=1.28.2",
+    "tiktoken>=0.13.0",
+    "chromadb>=1.5.9",
+    "e2b-code-interpreter>=2.9.1",
+    "numpy>=2.5.0",
+    "pandas",
+    "tabulate~=0.9",
+]
+
+[project.optional-dependencies]
+notebooks = [
+    "jupyterlab>=4.6.2",   
+]
+
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov",
+    "mypy",
+    "black",
+    "isort",
+    "poethepoet",
+]
+anthropic = [
+    "anthropic>=0.70.0",
+]
+examples = [
+    "matplotlib",
+]
+
+[project.urls]
+Homepage = "https://github.com/Leoxia55/agent-from-scratch"
+Documentation = "https://github.com/Leoxia55/agent-from-scratch#readme"
+Repository = "https://github.com/Leoxia55/agent-from-scratch"
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+pretty = true
+no_incremental = false
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 88
+target-version = ['py313']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+# testpaths = ["tests"]
+
+[tool.poe.tasks]
+# Type checking
+mypy = "mypy src/"
+
+# Testing
+# test = "pytest tests/ -v"
+# test-cov = "pytest tests/ --cov=src/scratchagent --cov-report=term-missing"
+
+# Code quality
+format-black = "black src/ examples/ tests/"
+format-isort = "isort src/ examples/ tests/"

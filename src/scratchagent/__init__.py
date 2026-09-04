@@ -16,7 +16,7 @@ from .types import (
 )
 
 # 执行上下文
-from .context import (   
+from .context import (
     ExecutionContext,
     AgentResult,
     PendingToolCall,
@@ -50,7 +50,7 @@ from .orchestration import (
     create_transfer_tool,
     LoopWorkFlow,
     SequentialWorkFlow,
-    ParallelWorkFlow,    
+    ParallelWorkFlow,
 )
 
 # Agent

@@ -11,12 +11,25 @@ from dotenv import find_dotenv, load_dotenv
 # Load environment variables from .env file
 # load_dotenv(find_dotenv()) 在jupyter 文件中可以简单的加载环境变量
 
-TEXT_EXTENSIONS = ['.txt', '.py', '.js', '.json', '.md', '.html',
-                   '.css', '.xml', '.yaml', '.yml', '.log', '.sh']
-SPREADSHEET_EXTENSIONS = ['.xlsx', '.xls', '.csv']
-IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']
-AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.flac', '.ogg', '.webm']
-PDF_EXTENSIONS = ['.pdf']
+TEXT_EXTENSIONS = [
+    ".txt",
+    ".py",
+    ".js",
+    ".json",
+    ".md",
+    ".html",
+    ".css",
+    ".xml",
+    ".yaml",
+    ".yml",
+    ".log",
+    ".sh",
+]
+SPREADSHEET_EXTENSIONS = [".xlsx", ".xls", ".csv"]
+IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"]
+AUDIO_EXTENSIONS = [".mp3", ".wav", ".m4a", ".flac", ".ogg", ".webm"]
+PDF_EXTENSIONS = [".pdf"]
+
 
 def load_project_env() -> None:
     """加载最近的.env 文件，且不暴露或覆盖已有变量值。
@@ -26,6 +39,7 @@ def load_project_env() -> None:
     env_file = find_dotenv(usecwd=True)
     if env_file:
         load_dotenv(env_file, override=False)
+
 
 def unzip_file(zip_path: str, extract_to: str | None = None) -> str:
     """将压缩包文件解压至指定目录."""
@@ -43,7 +57,7 @@ def unzip_file(zip_path: str, extract_to: str | None = None) -> str:
 
     extraction_path.mkdir(parents=True, exist_ok=True)
 
-    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+    with zipfile.ZipFile(archive_path, "r") as zip_ref:
         file_list = zip_ref.namelist()
         zip_ref.extractall(extraction_path)
 
@@ -70,7 +84,7 @@ def list_files(path: str = ".") -> str:
 
     items: list[str] = []
     for item in sorted(directory.iterdir()):
-        if item.name.startswith('.'):
+        if item.name.startswith("."):
             continue
 
         if item.is_dir():
@@ -79,8 +93,8 @@ def list_files(path: str = ".") -> str:
             items.append(f"{item.name}")
 
     # Sort directories first
-    dirs = [i for i in items if i.endswith('/')]
-    files = [i for i in items if not i.endswith('/')]
+    dirs = [i for i in items if i.endswith("/")]
+    files = [i for i in items if not i.endswith("/")]
 
     result = f"Directory: {directory}\n"
     for item in dirs + files:
@@ -100,7 +114,7 @@ def read_file(file_path: str, start_line: int = 1, end_line: int = -1) -> str:
 
     if ext in TEXT_EXTENSIONS:
         return _read_text_file(file_path, start_line, end_line)
-    elif ext == '.csv':
+    elif ext == ".csv":
         return _read_csv(file_path)
     elif ext in SPREADSHEET_EXTENSIONS:
         return _read_excel(file_path)
@@ -125,7 +139,7 @@ def read_media_file(file_path: str, query: str) -> str:
 
 
 def _read_text_file(file_path: str, start_line: int, end_line: int) -> str:
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     # Adjust line numbers (1-indexed to 0-indexed)
@@ -137,17 +151,19 @@ def _read_text_file(file_path: str, start_line: int, end_line: int) -> str:
     result: list[str] = []
     for i, line in enumerate(selected_lines, start=start_line):
         result.append(f"{i:4d} | {line.rstrip()}")
-    return '\n'.join(result)
+    return "\n".join(result)
 
 
 def _read_csv(file_path: str) -> str:
     import pandas as pd
+
     df = pd.read_csv(file_path)
     return str(df.to_markdown(index=False))
 
 
 def _read_excel(file_path: str) -> str:
     import pandas as pd
+
     df = pd.read_excel(file_path)
     return str(df.to_markdown(index=False))
 
@@ -158,7 +174,7 @@ def _analyze_image(file_path: str, query: str) -> str:
     with open(file_path, "rb") as f:
         image_data = base64.b64encode(f.read()).decode("utf-8")
 
-    ext = Path(file_path).suffix.lower().lstrip('.')
+    ext = Path(file_path).suffix.lower().lstrip(".")
     media_type = "image/jpeg" if ext == "jpg" else f"image/{ext}"
 
     client = OpenAI(
@@ -167,26 +183,34 @@ def _analyze_image(file_path: str, query: str) -> str:
     )
     response = client.chat.completions.create(
         model="gpt-4o",
-        messages=cast(Any, [{
-            "role": "user",
-            "content": [
-                {"type": "text", "text": query},
-                {"type": "image_url", "image_url": {
-                    "url": f"data:{media_type};base64,{image_data}"
-                }},
+        messages=cast(
+            Any,
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": query},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{media_type};base64,{image_data}"
+                            },
+                        },
+                    ],
+                }
             ],
-        }]),
+        ),
     )
     return response.choices[0].message.content or ""
 
 
 def _analyze_audio(file_path: str, query: str) -> str:
     from openai import OpenAI
-    
+
     with open(file_path, "rb") as f:
         audio_data = base64.b64encode(f.read()).decode("utf-8")
 
-    audio_format = Path(file_path).suffix.lower().lstrip('.')
+    audio_format = Path(file_path).suffix.lower().lstrip(".")
 
     client = OpenAI(
         api_key=os.environ.get("OPENROUTER_API_KEY"),
@@ -194,16 +218,24 @@ def _analyze_audio(file_path: str, query: str) -> str:
     )
     response = client.chat.completions.create(
         model="gpt-4o-audio-preview",
-        messages=cast(Any, [{
-            "role": "user",
-            "content": [
-                {"type": "text", "text": query},
-                {"type": "input_audio", "input_audio": {
-                    "data": audio_data,
-                    "format": audio_format,
-                }},
+        messages=cast(
+            Any,
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": query},
+                        {
+                            "type": "input_audio",
+                            "input_audio": {
+                                "data": audio_data,
+                                "format": audio_format,
+                            },
+                        },
+                    ],
+                }
             ],
-        }]),
+        ),
     )
     return response.choices[0].message.content or ""
 
@@ -226,19 +258,20 @@ def _analyze_pdf(file_path: str, query: str) -> str:
     for page in doc[:5]:  # First 5 pages
         pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
         img_bytes = pix.tobytes("png")
-        images.append(base64.b64encode(img_bytes).decode('utf-8'))
+        images.append(base64.b64encode(img_bytes).decode("utf-8"))
 
     # Build content with text and images
-    content: list[dict[str, Any]] = [{
-        "type": "text",
-        "text": f"{query}\n\nExtracted text:\n{text_content[:3000]}"
-    }]
+    content: list[dict[str, Any]] = [
+        {"type": "text", "text": f"{query}\n\nExtracted text:\n{text_content[:3000]}"}
+    ]
 
     for img_b64 in images:
-        content.append({
-            "type": "image_url",
-            "image_url": {"url": f"data:image/png;base64,{img_b64}"}
-        })
+        content.append(
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{img_b64}"},
+            }
+        )
 
     client = OpenAI(
         api_key=os.environ.get("OPENROUTER_API_KEY"),
@@ -250,6 +283,7 @@ def _analyze_pdf(file_path: str, query: str) -> str:
     )
     return response.choices[0].message.content or ""
 
+
 def delete_file(file_path: str) -> str:
     """删除一个文件或者目录."""
     path = Path(file_path)
@@ -260,6 +294,7 @@ def delete_file(file_path: str) -> str:
     try:
         if path.is_dir():
             import shutil
+
             shutil.rmtree(path)
             return f"Directory deleted: {file_path}"
         else:

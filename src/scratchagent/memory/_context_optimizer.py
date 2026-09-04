@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 def create_optimizer_callback(apply_optimization, threshold: int = 50000):
     """Factory function that creates a callback applying optimization strategy"""
+
     async def callback(
         context: ExecutionContext,
         request: LlmRequest,
@@ -34,16 +35,17 @@ def create_optimizer_callback(apply_optimization, threshold: int = 50000):
 
     return callback
 
-def count_tokens(request: LlmRequest) -> int:
 
+def count_tokens(request: LlmRequest) -> int:
     """Calculate total token count of LlmRequest."""
     import tiktoken
+
     try:
         # 模糊匹配 就 用 gpt-5 的token 字典
         encoding = tiktoken.encoding_for_model("gpt-5")
     except KeyError:
         encoding = tiktoken.get_encoding("o200k_base")
-    #调用 llm 中的工具build_messages 来得到llm 原始的消息内容
+    # 调用 llm 中的工具build_messages 来得到llm 原始的消息内容
     messages = build_messages(request)
     total_tokens = 0
 
@@ -68,6 +70,7 @@ def count_tokens(request: LlmRequest) -> int:
                 total_tokens += len(encoding.encode(json.dumps(tool_def)))
 
     return total_tokens
+
 
 def apply_sliding_window(
     context: ExecutionContext,
@@ -97,6 +100,7 @@ def apply_sliding_window(
 
     request.contents = preserved + remaining
 
+
 # 用于压缩工具调用参数的工具
 TOOLCALL_COMPACTION_RULES = {
     "create_file": "[Content saved to file]",
@@ -108,7 +112,6 @@ TOOLRESULT_COMPACTION_RULES = {
     "search_web": "Search results processed. Query: {query}. Re-search if needed.",
     "tavily_search": "Search results processed. Query: {query}. Re-search if needed.",
 }
-
 
 
 def apply_compaction(context: ExecutionContext, request: LlmRequest) -> None:
@@ -152,7 +155,7 @@ def apply_compaction(context: ExecutionContext, request: LlmRequest) -> None:
                 args = tool_call_args.get(item.tool_call_id, {})
                 template = TOOLRESULT_COMPACTION_RULES[item.name]
                 compressed_content = template.format(
-                    #优先取 file_path, 如果没有取 path ,再没有则 unknown
+                    # 优先取 file_path, 如果没有取 path ,再没有则 unknown
                     file_path=args.get("file_path", args.get("path", "unknown")),
                     query=args.get("query", "unknown"),
                 )
@@ -170,6 +173,7 @@ def apply_compaction(context: ExecutionContext, request: LlmRequest) -> None:
             compacted.append(item)
     # 替换原有的内容
     request.contents = compacted
+
 
 SUMMARIZATION_PROMPT = """You are summarizing an AI agent's work progress.
 
@@ -238,9 +242,7 @@ async def apply_summarization(
     if summary_idx is not None:
         previous_summary = contents[summary_idx]
         if isinstance(previous_summary, SummaryMessage):
-            history_parts.append(
-                f"[Previous summary]\n{previous_summary.content}"
-            )
+            history_parts.append(f"[Previous summary]\n{previous_summary.content}")
     history_parts.append(format_history_for_summary(to_summarize))
 
     summary = await generate_summary(llm_client, "\n\n".join(history_parts))
@@ -252,6 +254,7 @@ async def apply_summarization(
     preserved_prefix = contents[:summary_prefix_end]
     preserved_end = contents[summary_end:]
     request.contents = preserved_prefix + [summary_item] + preserved_end
+
 
 def format_history_for_summary(items: List[ContentItem]) -> str:
     """Convert ContentItem list to text for summarization."""
@@ -265,6 +268,7 @@ def format_history_for_summary(items: List[ContentItem]) -> str:
             content_preview = str(item.content[0])[:200] if item.content else ""
             lines.append(f"[Tool Result]: {item.name} -> {content_preview}...")
     return "\n".join(lines)
+
 
 async def generate_summary(llm_client: LlmClient, history: str) -> str:
     """Generate history summary using LLM."""
@@ -284,7 +288,7 @@ async def generate_summary(llm_client: LlmClient, history: str) -> str:
 
 
 class ContextOptimizer:
-    """ Hierarchical context optimization strategies for managing execution context in AI agents. """
+    """Hierarchical context optimization strategies for managing execution context in AI agents."""
 
     def __init__(
         self,
@@ -305,7 +309,7 @@ class ContextOptimizer:
         context: ExecutionContext,
         request: LlmRequest,
     ) -> Optional[LlmResponse]:
-        """ Register as before_llm_callback."""
+        """Register as before_llm_callback."""
         if count_tokens(request) < self.token_threshold:
             return None  # No optimization needed
 

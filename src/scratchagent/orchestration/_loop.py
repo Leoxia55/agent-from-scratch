@@ -11,6 +11,7 @@ from ..agent import Agent
 
 StopCondition = Callable[[AgentResult, int], bool]
 
+
 class LoopWorkFlow(Agent):
     """Run agents in a loop until loop condition is met."""
 
@@ -21,7 +22,7 @@ class LoopWorkFlow(Agent):
         max_iterations: int = 10,
         name: str = "loop_workflow",
     ):
-        super().__init__(model=None, name=name) # 补上初始化Agent 全部属性
+        super().__init__(model=None, name=name)  # 补上初始化Agent 全部属性
         self.agents = agents
         self.stop_condition = stop_condition
         self.max_iterations = max_iterations
@@ -34,7 +35,7 @@ class LoopWorkFlow(Agent):
         session_id: str | None = None,
         user_id: str | None = None,
         tool_confirmations: list[ToolConfirmation] | None = None,
-        verbose: bool = False,      
+        verbose: bool = False,
     ) -> AgentResult:
 
         if context is None:
@@ -48,7 +49,7 @@ class LoopWorkFlow(Agent):
                 context.final_result = None
                 context.current_step = 0
                 if is_first_agent:
-                    result = await agent.run(          # ← 会话参数只在首个代理处生效
+                    result = await agent.run(  # ← 会话参数只在首个代理处生效
                         user_input=user_input,
                         context=context,
                         session_id=session_id,
@@ -61,9 +62,15 @@ class LoopWorkFlow(Agent):
                     result = await agent.run(context=context, verbose=verbose)
                 context = result.context
 
-            if result and self.stop_condition and self.stop_condition(result, iteration):
+            if (
+                result
+                and self.stop_condition
+                and self.stop_condition(result, iteration)
+            ):
                 break
 
         if result is None:
-            raise ValueError("Workflow received an empty agents list.")  # 见下文附带 bug
+            raise ValueError(
+                "Workflow received an empty agents list."
+            )  # 见下文附带 bug
         return result

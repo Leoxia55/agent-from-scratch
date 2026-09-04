@@ -1,4 +1,5 @@
-""" 一个简单的数学计算工具"""
+"""一个简单的数学计算工具"""
+
 
 def calculator(operator: str, first_number: float, second_number: float) -> float:
     """执行简单的数学计算.

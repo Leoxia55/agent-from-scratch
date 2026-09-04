@@ -1,7 +1,8 @@
-"""Agent 入口 
+"""Agent 入口
 
 整个项目的核心模块，提供了与大模型交互的客户端接口和请求/响应数据结构。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -52,16 +53,18 @@ from ._skills import (
 
 logger = logging.getLogger(__name__)
 
+
 class Agent:
     """一个具备工具调用，可以循环执行的研究型智能体"""
+
     def __init__(
         self,
-        model: LlmClient | None = None, # 修改为可选，在run 入口加守卫
+        model: LlmClient | None = None,  # 修改为可选，在run 入口加守卫
         tools: List[BaseTool] | None = None,
         instruction: str = "",
         name: str = "agent",
         max_steps: int = 10,
-        description: str ="",
+        description: str = "",
         output_type: Optional[Type[BaseModel]] = None,
         # ch05 rag and callback
         before_tool_callbacks: list[Callable] | None = None,
@@ -76,7 +79,6 @@ class Agent:
         # multi-agents
         sub_agents: list[Agent] | None = None,
         disallow_transfer_to_peers: bool = False,
-
     ):
         self.model = model
         self.instruction = instruction
@@ -115,13 +117,15 @@ class Agent:
         user_id: str | None = None,
         tool_confirmations: list[ToolConfirmation] | None = None,
         verbose: bool = False,
-    ) ->AgentResult:
+    ) -> AgentResult:
         """Execute the agent."""
         if self.model is None:
             raise ValueError("Agent requires a model to run.")
         session = None
         if session_id and self.session_manager:
-            session = await self.session_manager.get_or_create(session_id, user_id) # 写入user_id
+            session = await self.session_manager.get_or_create(
+                session_id, user_id
+            )  # 写入user_id
 
         if context is None:
             context = ExecutionContext(
@@ -167,7 +171,7 @@ class Agent:
             context.add_event(user_event)
 
         # Set up code execution environment if needed
-        #if self.code_execution == "e2b" and context.code_env is None:
+        # if self.code_execution == "e2b" and context.code_env is None:
         #    await self._setup_code_env(context)
 
         terminal = False
@@ -234,11 +238,11 @@ class Agent:
         """Perform one think-act cycle"""
         # Prepare what to send to the LLM
         llm_request = await self._prepare_llm_request(context)
-        #llm_response = await self.think(llm_request)
+        # llm_response = await self.think(llm_request)
 
         # run before-llm-callbacks
         for callback in self.before_llm_callbacks:
-            cb_result = callback(context,llm_request)
+            cb_result = callback(context, llm_request)
             if hasattr(cb_result, "__await__"):
                 cb_result = await cb_result
             if cb_result is not None:
@@ -249,7 +253,7 @@ class Agent:
                 # callback provided a response, skip llm call
                 llm_response = cb_result
                 break
-        else: # 如果上面的for 循环没有 llm_response 就 break 或者结束了
+        else:  # 如果上面的for 循环没有 llm_response 就 break 或者结束了
             llm_response = await self.think(llm_request)
 
         if verbose:
@@ -291,12 +295,14 @@ class Agent:
 
         for tool_call in tool_calls:
             if tool_call.name not in tools_dict:
-                results.append(ToolResult(
-                    tool_call_id=tool_call.tool_call_id,
-                    name=tool_call.name,
-                    status="error",
-                    content=[f"Tool '{tool_call.name}' not found"],
-                ))
+                results.append(
+                    ToolResult(
+                        tool_call_id=tool_call.tool_call_id,
+                        name=tool_call.name,
+                        status="error",
+                        content=[f"Tool '{tool_call.name}' not found"],
+                    )
+                )
                 continue
 
             tool_obj = tools_dict[tool_call.name]
@@ -325,12 +331,13 @@ class Agent:
                 if isinstance(arguments, str):
                     arguments = json.loads(arguments)
                 message = tool_obj.get_confirmation_message(arguments)
-                pending.append(PendingToolCall(
-                    tool_call=tool_call,
-                    confirmation_message=message,
-                ))
+                pending.append(
+                    PendingToolCall(
+                        tool_call=tool_call,
+                        confirmation_message=message,
+                    )
+                )
                 continue
-
 
             # NEW: before tool callback
             skip = False
@@ -339,12 +346,14 @@ class Agent:
                 if hasattr(callback_result, "__await__"):
                     callback_result = await callback_result
                 if callback_result is not None:
-                    results.append(ToolResult(
-                        tool_call_id=tool_call.tool_call_id,
-                        name=tool_call.name,
-                        status="error",
-                        content=[callback_result],
-                    ))
+                    results.append(
+                        ToolResult(
+                            tool_call_id=tool_call.tool_call_id,
+                            name=tool_call.name,
+                            status="error",
+                            content=[callback_result],
+                        )
+                    )
                     skip = True
                     break
             if skip:
@@ -356,7 +365,7 @@ class Agent:
                 if isinstance(arguments, str):
                     arguments = json.loads(arguments)
                 output = await tool_obj(context, **arguments)
-                
+
                 tool_result = ToolResult(
                     tool_call_id=tool_call.tool_call_id,
                     name=tool_call.name,
@@ -389,15 +398,13 @@ class Agent:
         # if there are pending confirmations, pause execution
         if pending:
             # Store pending calls in context state
-            context.state["pending_tool_calls"] = [
-                p.model_dump() for p in pending
-            ]
+            context.state["pending_tool_calls"] = [p.model_dump() for p in pending]
             # still record any result we have
             if results:
                 tool_event = Event(
-                execution_id=context.execution_id,
-                author=self.name,
-                content=results,
+                    execution_id=context.execution_id,
+                    author=self.name,
+                    content=results,
                 )
                 context.add_event(tool_event)
             return AgentResult(
@@ -415,13 +422,12 @@ class Agent:
             )
             context.add_event(tool_event)
 
-        # handle transfer_to 
+        # handle transfer_to
         # for result in results:
         #     if result.name == "transfer_to_agent" and result.status == "success":
         #         # The transfer tool sets context.transfer_to
         #         pass
         # return None
-
 
     async def _prepare_llm_request(self, context: ExecutionContext) -> LlmRequest:
         """Build an LlmRequest from the current context."""
@@ -446,26 +452,26 @@ class Agent:
             except Exception:
                 pass
 
-         # Filter tools that should be exposed to the LLM
-        llm_tools = [t for t in self.tools if t.tool_definition is not None]               
+        # Filter tools that should be exposed to the LLM
+        llm_tools = [t for t in self.tools if t.tool_definition is not None]
 
         # determine tool choice strategy
         if self.output_tool_name:
             tool_choice = "required"
-        #elif self.tools:
+        # elif self.tools:
         elif llm_tools:
             tool_choice = "auto"
         else:
             tool_choice = None
 
-        request =  LlmRequest(
+        request = LlmRequest(
             instructions=instructions,
             contents=flat_contents,
             tools=llm_tools,
             tool_choice=tool_choice,
         )
 
-        # Let tools modify the request 
+        # Let tools modify the request
         # 准备 LLM 请求后，会让每个工具处理请求,
         # 这正好触发 MemoryTool.process_llm_request()，实现自动注入
         for tool_obj in self.tools:
@@ -473,11 +479,11 @@ class Agent:
 
         return request
 
-    def _is_final_response(self, event: Event) ->bool:
+    def _is_final_response(self, event: Event) -> bool:
         """Check if this event contains a final response"""
         if self.output_tool_name:
             for item in event.content:
-                if(
+                if (
                     isinstance(item, ToolResult)
                     and item.name == self.output_tool_name
                     and item.status == "success"
@@ -488,7 +494,6 @@ class Agent:
         has_tool_calls = any(isinstance(c, ToolCall) for c in event.content)
         has_tool_results = any(isinstance(c, ToolResult) for c in event.content)
         return not has_tool_calls and not has_tool_results
-
 
     def _extract_final_result(self, event: Event) -> Any:
         """Extract the final result from an event."""
@@ -506,7 +511,7 @@ class Agent:
             if isinstance(item, Message) and item.role == "assistant":
                 return item.content
         return None
-    
+
     def _setup_tools(
         self,
         tools: list[BaseTool | Callable[..., Any]],
@@ -526,8 +531,8 @@ class Agent:
 
         if self.output_type is not None:
             output_schema = self.output_type.model_json_schema()
-            output_schema.pop("title",None)
-            output_schema.pop("$defs",None)
+            output_schema.pop("title", None)
+            output_schema.pop("$defs", None)
 
             tool_definition = format_tool_definition(
                 "final_answer",
@@ -609,7 +614,9 @@ class Agent:
         """Set up E2B sandbox environment and upload configured skills."""
         sandbox = await asyncio.to_thread(create_e2b_sandbox)
         try:
-            await asyncio.to_thread(register_sandbox_tools, sandbox, self._sandbox_tools)
+            await asyncio.to_thread(
+                register_sandbox_tools, sandbox, self._sandbox_tools
+            )
             if self.skills_path:
                 skills = discover_skills(self.skills_path)
                 await asyncio.to_thread(self._upload_skills, sandbox, skills)
@@ -659,7 +666,6 @@ class Agent:
                         f"{source_path} to {remote_path}"
                     ) from exc
 
-
     def _register_sandbox_tools(self, sandbox) -> None:
         """Register sandbox-executable tools through the E2B adapter."""
         register_sandbox_tools(sandbox, self._sandbox_tools)
@@ -674,13 +680,13 @@ class Agent:
             "\n\n## Sandbox-Executable Tools\n"
             "The following functions are pre-registered in the sandbox "
             "and can be called directly in your Python code:\n"
-            f"{tools_json}"            
+            f"{tools_json}"
         )
-  
+
     async def _process_confirmations(
-            self,
-            context: ExecutionContext,
-            confirmations: list[ToolConfirmation],
+        self,
+        context: ExecutionContext,
+        confirmations: list[ToolConfirmation],
     ):
         """Process tool confirmations from human-in-the-loop"""
         raw_pending = context.state.get("pending_tool_calls", [])
@@ -711,31 +717,35 @@ class Agent:
                 if tool_obj:
                     try:
                         output = await tool_obj(context, **args)
-                        results.append(ToolResult(
-                            tool_call_id=tc.tool_call_id,
-                            name=tc.name,
-                            status="success",
-                            content=[output],
-                        ))
+                        results.append(
+                            ToolResult(
+                                tool_call_id=tc.tool_call_id,
+                                name=tc.name,
+                                status="success",
+                                content=[output],
+                            )
+                        )
                     except Exception as e:
-                        results.append(ToolResult(
-                            tool_call_id=tc.tool_call_id,
-                            name=tc.name,
-                            status="error",
-                            content=[str(e)],
-                        ))
+                        results.append(
+                            ToolResult(
+                                tool_call_id=tc.tool_call_id,
+                                name=tc.name,
+                                status="error",
+                                content=[str(e)],
+                            )
+                        )
             else:
-                results.append(ToolResult(
-                    tool_call_id=tc.tool_call_id,
-                    name=tc.name,
-                    status="error",
-                    content=["User denied the tool execution."],
-                ))
+                results.append(
+                    ToolResult(
+                        tool_call_id=tc.tool_call_id,
+                        name=tc.name,
+                        status="error",
+                        content=["User denied the tool execution."],
+                    )
+                )
 
         if remaining:
-            context.state["pending_tool_calls"] = [
-                p.model_dump() for p in remaining
-            ]
+            context.state["pending_tool_calls"] = [p.model_dump() for p in remaining]
         else:
             context.state.pop("pending_tool_calls", None)
             tool_event = Event(
@@ -802,4 +812,4 @@ class Agent:
                 raise ValueError(
                     f"Agent '{sub.name}' already has parent '{sub.parent.name}'"
                 )
-            sub.parent = self           
+            sub.parent = self

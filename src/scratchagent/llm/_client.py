@@ -7,7 +7,13 @@ from litellm import acompletion
 from pydantic import BaseModel, Field
 
 from ..tools import BaseTool
-from ..types import ContentItem, Message as CoreMessage, SummaryMessage, ToolCall, ToolResult
+from ..types import (
+    ContentItem,
+    Message as CoreMessage,
+    SummaryMessage,
+    ToolCall,
+    ToolResult,
+)
 from ._config import LLMConfigError, ModelConfig, Provider, resolve_model_config
 
 
@@ -153,17 +159,21 @@ def build_messages(request: LlmRequest) -> List[dict[str, Any]]:
             if messages and messages[-1]["role"] == "assistant":
                 messages[-1].setdefault("tool_calls", []).append(tool_call_dict)
             else:
-                messages.append({
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [tool_call_dict],
-                })
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": None,
+                        "tool_calls": [tool_call_dict],
+                    }
+                )
         elif isinstance(item, ToolResult):
-            messages.append({
-                "role": "tool",
-                "tool_call_id": item.tool_call_id,
-                "content": str(item.content[0]) if item.content else "",
-            })
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": item.tool_call_id,
+                    "content": str(item.content[0]) if item.content else "",
+                }
+            )
         elif isinstance(item, SummaryMessage):
             messages.append({"role": "system", "content": item.content})
 
@@ -191,11 +201,13 @@ def _parse_response(response: Any) -> LlmResponse:
         tool_arguments = getattr(function, "arguments", None)
         if not isinstance(tool_name, str) or tool_arguments is None:
             continue
-        content_items.append(ToolCall(
-            tool_call_id=str(getattr(tool_call, "id", "")),
-            name=tool_name,
-            arguments=tool_arguments,
-        ))
+        content_items.append(
+            ToolCall(
+                tool_call_id=str(getattr(tool_call, "id", "")),
+                name=tool_name,
+                arguments=tool_arguments,
+            )
+        )
 
     usage = getattr(response, "usage", None)
     return LlmResponse(

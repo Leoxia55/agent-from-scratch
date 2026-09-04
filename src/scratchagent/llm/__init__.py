@@ -5,7 +5,7 @@ from ._config import (
     UnsupportedProviderError,
     ModelConfig,
     Provider,
-    resolve_model_config
+    resolve_model_config,
 )
 
 from ._client import (

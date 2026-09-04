@@ -10,13 +10,14 @@ from chromadb.api.types import QueryResult
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 from ..context import ExecutionContext
-from ..types import(
+from ..types import (
     Event,
     Message,
     ToolCall,
     ToolResult,
 )
 from ..llm import LlmClient
+
 
 class TaskMemory(BaseModel):
     """Structured memory for GAIA problem-solving records."""
@@ -34,11 +35,13 @@ class TaskMemory(BaseModel):
         """Generate text for vector search."""
         return f"Task: {self.task_summary}"
 
+
 class DuplicateCheckResult(BaseModel):
     """Result of duplicate check."""
 
     decision: str = Field(description="ADD (new information) or SKIP (duplicate)")
     reason: str = Field(description="Explanation for the decision")
+
 
 TASK_MEMORY_EXTRACTION_PROMPT = """Analyze the following execution history and extract a structured task memory.
 
@@ -71,6 +74,7 @@ Judgment criteria:
 - Same problem with same approach and same result is a duplicate
 """
 
+
 class TaskMemoryManager:
     """Memory manager for GAIA problem-solving learning."""
 
@@ -84,7 +88,7 @@ class TaskMemoryManager:
         # ChromaDB setup
         self.client = chromadb.Client()
         embedding_fn = OpenAIEmbeddingFunction(
-            # api_key = 
+            # api_key =
             # api_base =
             model_name="text-embedding-3-small"
         )

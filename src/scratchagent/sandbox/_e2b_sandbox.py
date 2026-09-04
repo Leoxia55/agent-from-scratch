@@ -7,13 +7,16 @@ from dotenv import load_dotenv
 
 DEFAULT_TIMEOUT_SECONDS = 300
 
+
 class E2BSandboxConfigurationError(RuntimeError):
     """当 E2B 沙箱无法完成配置时抛出."""
+
 
 def _load_project_environment() -> None:
     """在不覆盖进程变量的前提下加载仓库环境."""
     project_root = Path(__file__).resolve().parents[3]
     load_dotenv(project_root / ".env", override=False)
+
 
 def create_e2b_sandbox(
     *,
@@ -52,9 +55,7 @@ def create_e2b_sandbox(
     except E2BSandboxConfigurationError:
         raise
     except Exception as exc:
-        raise E2BSandboxConfigurationError(
-            "Failed to create the E2B sandbox."
-        ) from exc
+        raise E2BSandboxConfigurationError("Failed to create the E2B sandbox.") from exc
 
 
 def register_sandbox_tools(sandbox: Any, tools: Iterable[Any]) -> None:
@@ -67,6 +68,7 @@ def register_sandbox_tools(sandbox: Any, tools: Iterable[Any]) -> None:
     error = getattr(execution, "error", None)
     if error:
         raise RuntimeError(f"Failed to register sandbox tools: {error}")
+
 
 def close_e2b_sandbox(sandbox: Any) -> None:
     """终止 E2B 沙箱，允许调用方记录清理失败信息."""

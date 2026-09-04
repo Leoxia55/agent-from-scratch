@@ -1,6 +1,5 @@
 """并行工作流：同时执行多个智能体"""
 
-
 from __future__ import annotations
 
 import asyncio
@@ -19,7 +18,7 @@ class ParallelWorkFlow(Agent):
         agents: List[Agent],
         name: str = "parallel_workflow",
     ):
-        super().__init__(model=None, name=name) # 补上初始化Agent 全部属性        
+        super().__init__(model=None, name=name)  # 补上初始化Agent 全部属性
         self.agents = agents
         self.name = name
 
@@ -30,7 +29,7 @@ class ParallelWorkFlow(Agent):
         session_id: str | None = None,
         user_id: str | None = None,
         tool_confirmations: list[ToolConfirmation] | None = None,
-        verbose: bool = False,    
+        verbose: bool = False,
     ) -> AgentResult:
         """Execute all agents concurrently."""
         if context is None:
@@ -39,7 +38,10 @@ class ParallelWorkFlow(Agent):
         existing_event_count = len(context.events) if context else 0
 
         results = await asyncio.gather(
-            *[agent.run(user_input,context=context, verbose=verbose) for agent in self.agents]
+            *[
+                agent.run(user_input, context=context, verbose=verbose)
+                for agent in self.agents
+            ]
         )
 
         merged_context = ExecutionContext()
@@ -47,7 +49,7 @@ class ParallelWorkFlow(Agent):
             for event in context.events:
                 merged_context.add_event(event)
 
-        seen_user_event = (context is not None)
+        seen_user_event = context is not None
         for result in results:
             new_events = result.context.events[existing_event_count:]
             for event in new_events:
@@ -69,4 +71,3 @@ class ParallelWorkFlow(Agent):
             context=merged_context,
             status="complete",
         )
-    

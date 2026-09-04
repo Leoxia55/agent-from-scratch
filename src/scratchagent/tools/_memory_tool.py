@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from ..memory import TaskMemory
     from ..llm import LlmRequest
 
+
 class MemoryTool(BaseTool):
     """可自动将相关历史记忆注入到大语言模型请求中的工具"""
 
@@ -22,7 +23,7 @@ class MemoryTool(BaseTool):
                 "Search for past problem-solving records."
                 "Use this to check if similar problems were solved before."
             ),
-            tool_definition=None, # Automatic injection only
+            tool_definition=None,  # Automatic injection only
         )
 
     async def execute(
@@ -46,7 +47,7 @@ class MemoryTool(BaseTool):
                 f"- Problem: {mem.task_summary}\n"
                 f"- Approach: {mem.approach}\n"
                 f"- Answer: {mem.final_answer}\n"
-                f"- Result: {status}"                
+                f"- Result: {status}"
             )
             if not mem.is_correct and mem.error_analysis:
                 text += f"\n- Error analysis:{mem.error_analysis}"
@@ -55,28 +56,27 @@ class MemoryTool(BaseTool):
         return "\n\n".join(results)
 
     async def process_llm_request(
-            self, 
-            context: ExecutionContext, 
-            request: LlmRequest,
+        self,
+        context: ExecutionContext,
+        request: LlmRequest,
     ) -> None:
         """在调用大语言模型之前注入相关记忆。"""
         if context.memory_manager is None:
             return
 
         user_msgs = [
-            c for c in request.contents
-            if isinstance(c, Message) and c.role == "user"
+            c for c in request.contents if isinstance(c, Message) and c.role == "user"
         ]
         if not user_msgs:
             return
         result = await self.execute(context, user_msgs[-1].content)
         if not result:
-            return 
+            return
 
         request.append_instructions(
             "The following are records from similar problems solved in the past:\n"
             "<PAST_EXPERIENCES>\n"
             f"{result}\n"
             "</PAST_EXPERIENCES>\n"
-            "Reference successful approaches and avoid approaches that led to failures."            
-        )    
+            "Reference successful approaches and avoid approaches that led to failures."
+        )

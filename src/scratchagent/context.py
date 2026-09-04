@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from .types import Event, ToolCall
 
+
 @dataclass
 class ExecutionContext:
     """所有运行期间执行状态的存储中心"""
@@ -39,22 +40,28 @@ class ExecutionContext:
         """移到下一步，计数器+1"""
         self.current_step += 1
 
+
 class PendingToolCall(BaseModel):
     """等待用户确认的工具调用 (human-in-the-loop)."""
+
     tool_call: "ToolCall"
     confirmation_message: str
+
 
 @dataclass
 class AgentResult:
     """智能体执行结果。"""
+
     output: Any  # str | BaseModel
     context: ExecutionContext
-    #status: str = "complete"  # "complete" | "pending" | "error"
+    # status: str = "complete"  # "complete" | "pending" | "error"
     status: Literal["complete", "pending", "error"]
     pending_tool_calls: list[PendingToolCall] = field(default_factory=list)
 
+
 class ToolConfirmation(BaseModel):
     """用户对待处理工具调用的响应 (human-in-the-loop)."""
+
     tool_call_id: str
     approved: bool
     modified_arguments: dict | None = None

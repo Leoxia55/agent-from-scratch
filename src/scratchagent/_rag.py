@@ -1,4 +1,4 @@
-""" 检索增强生成 RAG 功能：嵌入、分块与向量搜索"""
+"""检索增强生成 RAG 功能：嵌入、分块与向量搜索"""
 
 import os
 import numpy as np
@@ -10,7 +10,8 @@ from dotenv import find_dotenv, load_dotenv
 # 方法1： 直接注释
 # load_dotenv(find_dotenv())
 
-#方法2: 惰性加载，由于这个是一个可以独立的 RAG 服务，所以支持加载 .env
+# 方法2: 惰性加载，由于这个是一个可以独立的 RAG 服务，所以支持加载 .env
+
 
 def load_project_env() -> None:
     """加载最近的.env 文件，且不暴露或覆盖已有变量值。
@@ -40,17 +41,15 @@ def get_embeddings(texts, model="text-embedding-3-small") -> np.ndarray:
     # 因为 "text-embedding-3-small", 中转平台没有提供
     client = OpenAI(
         api_key=os.getenv("OPENROUTER_API_KEY"),
-        base_url=os.getenv("OPENROUTER_BASE_URL")
+        base_url=os.getenv("OPENROUTER_BASE_URL"),
     )
     if isinstance(texts, str):
         texts = [texts]
-    
-    response = client.embeddings.create(
-        model=model,
-        input=texts
-    )
+
+    response = client.embeddings.create(model=model, input=texts)
     embeddings = np.array([item.embedding for item in response.data])
     return embeddings
+
 
 def fixed_length_chunking(text, chunk_size=200, overlap=50) -> list[str]:
     """
@@ -92,9 +91,11 @@ def vector_search(query, chunks, chunk_embeddings, top_k=3) -> list:
 
     results = []
     for idx in top_indices:
-        results.append({
-            'chunk': chunks[idx],
-            'similarity': similarities[idx],
-        })
+        results.append(
+            {
+                "chunk": chunks[idx],
+                "similarity": similarities[idx],
+            }
+        )
 
     return results

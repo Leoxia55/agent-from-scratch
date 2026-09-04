@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from dotenv import find_dotenv, load_dotenv
 
+
 class LLMConfigError(RuntimeError):
     """当提供商缺少必需的环境配置项时抛出该异常."""
 
@@ -141,5 +142,3 @@ def _strip_known_prefix(model: str) -> str:
         if model.startswith(prefix):
             return model.removeprefix(prefix)
     return model
-
-

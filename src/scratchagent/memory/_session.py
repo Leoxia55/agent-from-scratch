@@ -10,12 +10,13 @@ from ..types import Event
 
 class Session(BaseModel):
     """用于在多次 run () 调用之间保存会话持久状态的容器."""
+
     session_id: str
     user_id: str | None = None
     events: list[Event] = Field(default_factory=list)
     state: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)   
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class BaseSessionManager(ABC):
@@ -52,7 +53,6 @@ class BaseSessionManager(ABC):
         return session
 
 
-
 class InMemorySessionManager(BaseSessionManager):
     """用于开发和测试的内存会话存储。"""
 
@@ -78,5 +78,5 @@ class InMemorySessionManager(BaseSessionManager):
 
     async def save(self, session: Session) -> None:
         """Save session to storage."""
-        session.updated_at = datetime.now() # 每次更新都需要修改时间
+        session.updated_at = datetime.now()  # 每次更新都需要修改时间
         self._sessions[session.session_id] = session

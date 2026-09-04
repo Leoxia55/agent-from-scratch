@@ -8,6 +8,7 @@ from typing import Any
 from ..context import ExecutionContext
 from ._base import tool
 
+
 def _execution_output(execution: Any) -> str:
     """以可读格式返回软件开发工具包（SDK）的执行结果，禁止二次编码生成 JSON 数据."""
     error = getattr(execution, "error", None)
@@ -20,7 +21,7 @@ def _execution_output(execution: Any) -> str:
     return json.dumps(serialized, indent=2, ensure_ascii=False)
 
 
-@tool(# type: ignore[reportArgumentType]
+@tool(  # type: ignore[reportArgumentType]
     name="execute_python_in_e2b",
     description=(
         "Execute Python code in an isolated E2B sandbox. "
@@ -34,9 +35,9 @@ async def execute_python_in_e2b(context: ExecutionContext, code: str) -> str:
     execution = await asyncio.to_thread(context.code_env.run_code, code)
     return _execution_output(execution)
 
-@tool(# type: ignore[reportArgumentType]
-    name="base_e2b_tool", 
-    description="Execute a shell command in an E2B sandbox."
+
+@tool(  # type: ignore[reportArgumentType]
+    name="base_e2b_tool", description="Execute a shell command in an E2B sandbox."
 )
 async def base_e2b_tool(context: ExecutionContext, command: str) -> str:
     """在 E2B 沙箱中执行 shell 命令."""
@@ -51,9 +52,9 @@ async def base_e2b_tool(context: ExecutionContext, command: str) -> str:
         output_parts.append(f"STDERR: {result.stderr}")
     return "\n".join(output_parts) if output_parts else "Command completed (no output)"
 
-@tool(# type: ignore[reportArgumentType]
-    name="upload_file_to_e2b", 
-    description="Upload a local file to an E2B sandbox."
+
+@tool(  # type: ignore[reportArgumentType]
+    name="upload_file_to_e2b", description="Upload a local file to an E2B sandbox."
 )
 async def upload_file_to_e2b(
     context: ExecutionContext,

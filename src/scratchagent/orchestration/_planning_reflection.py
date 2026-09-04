@@ -39,8 +39,7 @@ def create_tasks(tasks: List[Task]) -> str:
     - Keep future tasks as 'pending'
     """
     normalized_tasks = [
-        task if isinstance(task, Task) else Task.model_validate(task)
-        for task in tasks
+        task if isinstance(task, Task) else Task.model_validate(task) for task in tasks
     ]
     plan = "\n".join(str(task) for task in normalized_tasks)
     print(f"\n[Planning] Task list:\n{plan}\n", flush=True)
@@ -76,5 +75,3 @@ def reflection(analysis: str, need_replan: bool = False) -> str:
     if need_replan:
         return f"Reflection recorded (REPLAN NEEDED): {analysis}"
     return f"Reflection recorded: {analysis}"
-
-

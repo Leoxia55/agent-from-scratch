@@ -1,4 +1,4 @@
-""" 回调函数工具, 用于Agent 审批和压缩"""
+"""回调函数工具, 用于Agent 审批和压缩"""
 
 import json
 from collections.abc import Mapping
@@ -9,6 +9,7 @@ from .._rag import fixed_length_chunking, get_embeddings, vector_search
 
 DANGEROUS_TOOLS = ["delete_file", "send_email", "execute_sql"]
 
+
 def approval_callback(context: ExecutionContext, tool_call: ToolCall):
     """执行危险工具前请求用户批准."""
     if tool_call.name not in DANGEROUS_TOOLS:
@@ -17,12 +18,15 @@ def approval_callback(context: ExecutionContext, tool_call: ToolCall):
     print(f"Tool: {tool_call.name}")
     print(f"Arguments: {tool_call.arguments}")
 
-    response = input("Do you approve the execution of this tool? (y/n): ").strip().lower()
+    response = (
+        input("Do you approve the execution of this tool? (y/n): ").strip().lower()
+    )
     if response == "y":
         print("✅ Approved. Executing...\n")
         return None
     print("❌ Rejected. Tool execution will not proceed.\n")
     return f"User denied execution of the tool '{tool_call.name}'."
+
 
 def _extract_search_query(context: ExecutionContext, tool_call_id: str) -> str:
     """从上下文中提取原始搜索查询."""
@@ -40,6 +44,7 @@ def _extract_search_query(context: ExecutionContext, tool_call_id: str) -> str:
                 query = arguments.get("query", "")
                 return query if isinstance(query, str) else ""
     return ""
+
 
 def search_compressor(content: ExecutionContext, tool_result: ToolResult):
     """基于查询的向量检索压缩搜索结果."""

@@ -2,6 +2,7 @@
 
 把普通 Python 函数包装成AI Agent 可以识别、描述和调用的工具。
 """
+
 from __future__ import annotations
 
 import inspect
@@ -24,19 +25,19 @@ from ._helpers import (
     format_tool_definition,
 )
 
+
 class BaseTool(ABC):
     """所有工具的抽象基类."""
 
     DEFAULT_COMFIRMATION_TEMPLATE = (
-        "The Agent wants to execute '{name}' with arguments: {arguments}."
-        "你同意吗?"
+        "The Agent wants to execute '{name}' with arguments: {arguments}." "你同意吗?"
     )
 
     def __init__(
         self,
-        name: str | None = None ,
+        name: str | None = None,
         description: str | None = None,
-        tool_definition : Dict[str, Any] | None = None,
+        tool_definition: Dict[str, Any] | None = None,
         required_confirmation: bool = False,
         confirmation_message_template: str | None = None,
     ):
@@ -53,11 +54,10 @@ class BaseTool(ABC):
     @property
     def tool_definition(self) -> Dict[str, Any] | None:
         return self._tool_definition
-    
+
     def get_confirmation_message(self, arguments: dict) -> str:
         return self.confirmation_message_template.format(
-            name=self.name, 
-            arguments=arguments
+            name=self.name, arguments=arguments
         )
 
     async def process_llm_request(
@@ -80,7 +80,7 @@ class FunctionTool(BaseTool):
     """将一个 Python 函数封装为基础工具"""
 
     def __init__(
-        self, 
+        self,
         func: Callable[..., Any],
         name: str | None = None,
         description: str | None = None,
@@ -102,7 +102,7 @@ class FunctionTool(BaseTool):
         resolved_name = name or func.__name__
         resolved_desc = description or (func.__doc__ or "").strip()
 
-        # Must set name/description before _generate_definition 
+        # Must set name/description before _generate_definition
 
         super().__init__(
             name=resolved_name,
@@ -143,26 +143,26 @@ class FunctionTool(BaseTool):
             raise ValueError(f"Tool '{self.name}' is not marked as sandbox_executable")
 
         source = inspect.getsource(self.func)
-        lines = source.split('\n')
+        lines = source.split("\n")
         filtered_lines = []
         skip_decorator = False
         for line in lines:
             stripped = line.strip()
-            if stripped.startswith('@tool'):
+            if stripped.startswith("@tool"):
                 skip_decorator = True
-                if '(' not in stripped or ')' in stripped:
+                if "(" not in stripped or ")" in stripped:
                     skip_decorator = False
                 continue
             if skip_decorator:
-                if ')' in stripped:
+                if ")" in stripped:
                     skip_decorator = False
                 continue
             filtered_lines.append(line)
-        return '\n'.join(filtered_lines)
+        return "\n".join(filtered_lines)
+
 
 @overload
-def tool(func: Callable[..., Any], /) -> FunctionTool:
-    ...
+def tool(func: Callable[..., Any], /) -> FunctionTool: ...
 
 
 @overload
@@ -173,8 +173,7 @@ def tool(
     sandbox_executable: bool = False,
     required_confirmation: bool = False,
     confirmation_message: str | None = None,
-) -> Callable[[Callable[..., Any]], FunctionTool]:
-    ...
+) -> Callable[[Callable[..., Any]], FunctionTool]: ...
 
 
 def tool(
@@ -211,4 +210,3 @@ def tool(
         return decorator(func)
     # Called with arguments: @tool(name=...)
     return decorator
-

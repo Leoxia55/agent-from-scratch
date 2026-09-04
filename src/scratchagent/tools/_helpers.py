@@ -1,9 +1,10 @@
 """这是Agent 工具助手类
-   把普通 Python 函数转换成大模型可以识别的 Tool 定义，并执行模型返回的 Tool Call。
-   它承担了两部分工作：
-    1. **注册工具**：读取函数签名、类型注解和文档字符串，生成 OpenAI function calling 格式的 JSON Schema。
-    2. **执行工具**：接收模型返回的工具调用，解析参数并调用对应的 Python 函数。
+把普通 Python 函数转换成大模型可以识别的 Tool 定义，并执行模型返回的 Tool Call。
+它承担了两部分工作：
+ 1. **注册工具**：读取函数签名、类型注解和文档字符串，生成 OpenAI function calling 格式的 JSON Schema。
+ 2. **执行工具**：接收模型返回的工具调用，解析参数并调用对应的 Python 函数。
 """
+
 import inspect
 import json
 from typing import Any, get_args, get_origin, get_type_hints
@@ -67,35 +68,35 @@ def function_to_input_schema(func: Any) -> dict[str, Any]:
         if param.default is inspect.Parameter.empty:
             required.append(name)
 
-    schema = {
-        "type": "object",
-        "properties": properties
-    }
+    schema = {"type": "object", "properties": properties}
     if required:
         schema["required"] = required
 
     return schema
 
+
 def format_tool_definition(name: str, description: str, parameters: dict) -> dict:
     """把工具函数定义格式化成一个 openai function calling format"""
-    return{
+    return {
         "type": "function",
-        "function":{
+        "function": {
             "name": name,
             "description": description,
             "parameters": parameters,
-        }
+        },
     }
+
 
 def function_to_tool_definition(func) -> dict:
     """将 Python 函数转换为 OpenAI 格式的工具定义。
-        使用函数名称、文档字符串以及类型提示.
+    使用函数名称、文档字符串以及类型提示.
     """
 
     name = func.__name__
     description = inspect.getdoc(func) or f"Function: {name}"
     parameters = function_to_input_schema(func)
     return format_tool_definition(name, description, parameters)
+
 
 def tool_execution(tool_box: dict, tool_call) -> str:
     """使用工具_box 映射执行一次工具调用.
@@ -115,4 +116,3 @@ def tool_execution(tool_box: dict, tool_call) -> str:
         return str(result)
     except Exception as e:
         return f"Error executing {func_name}: {str(e)}"
-

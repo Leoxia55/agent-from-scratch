@@ -258,9 +258,3 @@ def load_project_env() -> None:
 - [ ] 能讲清 `__all__` 的"公开 API 契约"意义，以及"漏写符号"的坑。
 
 ---
-
-## 3.10 延伸阅读
-
-- `D:\00_persist\agent-from-scratch\docs\concepts\package.md`——项目官方的类型注解规范文档（第 6 轮审计后完善）。
-- `D:\workbuddy_ws\07_python工程\scratch_agent\agent-from-scratch_最终复审报告_v6.md`——93 分审计的完整轨迹（附录 2 会深入）。
-- `D:\workbuddy_ws\07_python工程\scratch_agent\实操详细笔记\01 项目环境搭建.md`——真实的 uv 搭建全过程。

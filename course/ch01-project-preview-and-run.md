@@ -289,9 +289,3 @@ flowchart LR
 - [ ] 能说出顶层 9 个核心符号，并对号入座到各自章节。
 
 ---
-
-## 1.10 延伸阅读
-
-- `D:\00_persist\agent-from-scratch\README.md` §四「快速开始」、§十一「代码结构」。
-- `D:\workbuddy_ws\07_python工程\scratch_agent\technical-architecture.md` §4「架构分层」。
-- `D:\workbuddy_ws\07_python工程\scratch_agent\实操详细笔记\01 项目环境搭建.md`——真实的 uv 搭建过程记录。

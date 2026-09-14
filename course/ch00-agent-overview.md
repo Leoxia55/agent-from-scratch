@@ -192,7 +192,3 @@ stateDiagram-v2
 
 ---
 
-## 0.9 延伸阅读
-
-- Manning Publications《Build an AI Agent from Scratch》第 1 章，对 Agent 与 LLM 差异有更系统的论述（本项目的配套原书，即 `scratch_agent/Build an AI Agent.pdf`）。
-- `D:\00_persist\agent-from-scratch\README.md` §一「先定义 Agent」、§二「从第一性原理拆解」——本项目的官方定义，建议配合阅读。

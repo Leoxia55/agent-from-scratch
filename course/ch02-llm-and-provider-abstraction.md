@@ -282,9 +282,3 @@ flowchart TD
 - [ ] 能讲清 LiteLLM 用"模型前缀"屏蔽差异的原理，以及这种屏蔽的**三条边界**。
 
 ---
-
-## 2.9 延伸阅读
-
-- `D:\00_persist\agent-from-scratch\docs\reference\llm.md`、`docs\how-to\switch-provider.md`——官方对 LLM 层与切换 Provider 的说明。
-- `D:\workbuddy_ws\07_python工程\scratch_agent\00 LiteLLM 使用.pdf`、`00 大模型接口、模型适配器讨论 LiteLLM llm-bridge Langchain 等.pdf`——LiteLLM 与模型适配器的深入讨论。
-- `D:\workbuddy_ws\07_python工程\scratch_agent\实操详细笔记\02 Openai 调用.md`——真实的 OpenAI 调用记录。

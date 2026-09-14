@@ -1,4 +1,4 @@
-# ScratchAgent 课程：从零读懂一个 AI 智能体
+# ScratchAgent 课程：从零手搓一个 AI 智能体
 
 > 这是一门**系统课程**：第 0~20 章共 21 章 + 3 个附录，每章讲透一个模块，全部基于本仓库真实源码逐行讲解。
 > 如果你是第一次接触，建议先看 [`docs/tutorials/`](../docs/tutorials/00-minimal-llm-request.md) 的 6 篇快速上手教程跑通最小路径，再回到本课程系统学习。

@@ -11,6 +11,12 @@
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-green.svg)](pyproject.toml)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+**作者**：AI动力老夏（25 年 IT 工程师 · 10 年大学计算机编程兼职讲师）
+
+> 💬 **一起动手学 Agent**：关注公众号「**老夏的AI自习室**」（公众号 ID：`persist_ai_lab`），或扫描下方二维码加微信「**动力老夏**」，备注 **agent**，拉你进「Agent 动手学习群」。学习交流，前期全部免费。
+>
+> <p align="left"><img src="assets/wechat-dongli-laoxia.png" width="180" alt="微信二维码：动力老夏"></p>
+
 本项目的目标不是提供一个“调用几行代码就完成一切”的黑盒框架，而是把智能体拆成可以阅读、调试和替换的基础部件，帮助你理解：模型如何决定下一步、工具如何被描述和执行、上下文如何持续、错误如何回传，以及多个智能体如何协作。
 
 项目**不使用第三方智能体 SDK 或 Agent Framework 来实现核心循环**。项目使用 LiteLLM、Pydantic、OpenAI 兼容客户端、ChromaDB、Tavily、E2B 等基础库接入模型和基础设施，但 `Agent`、工具协议、执行上下文和编排逻辑由本项目自行实现。

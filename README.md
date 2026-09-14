@@ -22,6 +22,7 @@
 ## 目录
 
 - [核心亮点速览](#核心亮点速览)
+- [架构总览](#架构总览)
 - [一、先定义 Agent](#一先定义-agent)
 - [二、从第一性原理拆解](#二从第一性原理拆解)
 - [三、核心执行闭环](#三核心执行闭环)
@@ -49,6 +50,14 @@
 | 📚 **配套完整** | `course/` 21 章系统课程（每章：原理→源码精读→动手实验）+ `docs/` 30 篇分层文档 + `tests/` 单元与集成测试，不是「丢个仓库就走」 |
 | 🛡️ **工程严谨** | Python 3.13 现代类型注解、mypy 严格检查、black/isort 统一风格、异步优先 |
 | 🔐 **安全自觉** | Human-in-the-loop 人工审批、E2B 沙箱隔离、信任边界文档 |
+
+## 架构总览
+
+一张图看懂 `scratchagent` 的核心结构：`Agent` 主循环（`run · step · think · act`）驱动 `LlmClient`、`tools` 与 `ExecutionContext`；外围由 `memory`、`rag`、`skills`、`sandbox` 与 `orchestration`（含 Transfer 多智能体转接）提供记忆、检索、技能、沙箱与编排能力。
+
+**图中每个模块都对应 `src/scratchagent/` 下的真实代码**，逐个拆解见 [十一、代码结构](#十一代码结构) 与 [course/ 系统课程](course/README.md)。
+
+<p align="center"><img src="assets/architecture-overview.png" alt="scratchagent 核心框架架构图" width="720"></p>
 
 ## 一、先定义 Agent
 

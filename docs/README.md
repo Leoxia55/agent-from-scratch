@@ -4,10 +4,11 @@ ScratchAgent 是一个用于学习智能体原理和工程边界的 Python 框�
 
 ## 学习路径
 
-1. **教程**：从一次最小 LLM 请求开始，逐步加入工具、会话、上下文优化、E2B/Skills 和多智能体。
-2. **How-to**：围绕实际任务查找 provider、工具确认、callbacks、RAG、持久化和调试做法。
-3. **概念**：理解 agent loop、工具 schema、执行上下文、记忆、上下文压缩、路由和沙箱信任边界。
-4. **参考**：按类、函数和环境变量查参数、返回值及错误。
+1. **快速上手**：从一次最小 LLM 请求开始，逐步加入工具、会话、上下文优化、E2B/Skills 和多智能体。
+2. **系统课程**：[`course/`](../course/README.md) 21 章，每章讲透一个模块（原理 → 源码精读 → 动手实验），适合想完整理解智能体底层原理的学习者。
+3. **How-to**：围绕实际任务查找 provider、工具确认、callbacks、RAG、持久化和调试做法。
+4. **概念**：理解 agent loop、工具 schema、执行上下文、记忆、上下文压缩、路由和沙箱信任边界。
+5. **参考**：按类、函数和环境变量查参数、返回值及错误。
 
 ## 准备环境
 
@@ -27,10 +28,13 @@ OPENAI_BASE_URL=https://api.openai.com/v1
 
 ## 目录
 
-- [教程](tutorials/00-minimal-llm-request.md)
+- [快速上手教程](tutorials/00-minimal-llm-request.md)
+- [系统课程（21 章）](../course/README.md)
 - [How-to](how-to/switch-provider.md)
 - [概念](concepts/agent-loop.md)
 - [参考](reference/agent.md)
+- [深度解读：agent.py 逐行剖析](deep-dives/agent-py-deep-dive.md)
+- [项目评估报告（独立审计快照）](assessment.md)
 
 ## 重要边界
 

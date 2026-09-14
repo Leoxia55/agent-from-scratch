@@ -2,23 +2,30 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
-from ..tools import FunctionTool, tool
 from ..context import ExecutionContext
+from ..tools import FunctionTool, tool
 
 if TYPE_CHECKING:
     from ..agent import Agent
 
 
-def create_transfer_tool(target_agents: List[Agent]) -> FunctionTool:
+def create_transfer_tool(target_agents: list[Agent]) -> FunctionTool:
     """基于可迁移智能体列表创建迁移工具."""
+
+    if not target_agents:
+        raise ValueError("Target_agents cannot be empty for transfer tool.")
 
     # Compose agent info
     target_names = [agent.name for agent in target_agents]
     agent_descriptions = []
     for agent in target_agents:
-        desc = agent.description or agent.instruction[:100].replace("\n", " ")
+        desc = agent.description
+        if not desc and agent.instruction is not None:
+            desc = agent.instruction[:100].replace("\n", " ")
+        if not desc:
+            desc = "No description available."
         if len(desc) > 100:
             desc = desc[:100] + "..."
         agent_descriptions.append(f" - {agent.name}: {desc}")

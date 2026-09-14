@@ -31,7 +31,7 @@ def function_to_input_schema(func: Any) -> dict[str, Any]:
         if name in ("self", "context"):
             continue
 
-        prop = {}
+        prop: dict[str, Any] = {}
         hint = hints.get(name)
 
         if hint == str:
@@ -48,19 +48,23 @@ def function_to_input_schema(func: Any) -> dict[str, Any]:
             args = get_args(hint)
             if args:
                 item_type = args[0]
+                items_schema: dict[str, Any]
                 if item_type == str:
-                    prop["items"] = {"type": "string"}
+                    items_schema = {"type": "string"}
                 elif item_type == int:
-                    prop["items"] = {"type": "integer"}
+                    items_schema = {"type": "integer"}
                 elif hasattr(item_type, "model_json_schema"):
-                    prop["items"] = item_type.model_json_schema()
+                    items_schema = item_type.model_json_schema()
+                else:
+                    items_schema = {"type": "string"}
+                prop["items"] = items_schema
         elif hint is not None and hasattr(hint, "model_json_schema"):
             # Pydantic model
             prop = hint.model_json_schema()
         else:
             prop["type"] = "string"
 
-        # 根据参数名，生成了一个描述， 待改进，从函数描述中获取
+        # 根据参数名生成了一个描述，待改进从函数描述中获取
         prop["description"] = f"Parameter:{name}"
 
         properties[name] = prop

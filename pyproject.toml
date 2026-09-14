@@ -9,7 +9,7 @@ description = "A minimal AI Agent from scratch for educational purposes"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.13.0, <3.14"
-authors =[
+authors = [
     {name = "YouliangXia", email = "youliangxia0505@gmail.com"}
 ]
 keywords = ["agents", "scratch-agent", "ai", "llm", "educational"]
@@ -24,15 +24,13 @@ dependencies = [
     "litellm>=1.93.0",
     "mcp[cli]>=1.29.0",
     "tavily-python>=0.7.27",
-    "html2text>=2025.4.15",
-    "lxml>=6.1.1",
     "scikit-learn>=1.9.0",
     "pymupdf>=1.28.2",
     "tiktoken>=0.13.0",
     "chromadb>=1.5.9",
     "e2b-code-interpreter>=2.9.1",
     "numpy>=2.5.0",
-    "pandas",
+    "pandas>=3.0.5",
     "tabulate~=0.9",
 ]
 
@@ -67,7 +65,7 @@ python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 warn_redundant_casts = true
-warn_unused_ignores = true
+warn_unused_ignores = false
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
@@ -89,15 +87,21 @@ line_length = 88
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
-# testpaths = ["tests"]
+testpaths = ["tests"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "e2e: marks tests as end-to-end (requires network + API keys, deselect by default)",
+    "slow: marks tests as slow (>5s)",
+]
+asyncio_mode = "auto"
 
 [tool.poe.tasks]
 # Type checking
 mypy = "mypy src/"
 
 # Testing
-# test = "pytest tests/ -v"
-# test-cov = "pytest tests/ --cov=src/scratchagent --cov-report=term-missing"
+test = "pytest tests/ -v"
+test-cov = "pytest tests/ --cov=src/scratchagent --cov-report=term-missing"
 
 # Code quality
 format-black = "black src/ examples/ tests/"

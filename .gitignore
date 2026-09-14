@@ -9,3 +9,14 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Local tool configs (never publish)
+.claude/settings.local.json
+
+# Jupyter
+.ipynb_checkpoints/

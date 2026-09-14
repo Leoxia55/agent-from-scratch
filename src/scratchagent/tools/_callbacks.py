@@ -4,8 +4,8 @@ import json
 from collections.abc import Mapping
 
 from ..context import ExecutionContext
+from ..rag import fixed_length_chunking, get_embeddings, vector_search
 from ..types import ToolCall, ToolResult
-from .._rag import fixed_length_chunking, get_embeddings, vector_search
 
 DANGEROUS_TOOLS = ["delete_file", "send_email", "execute_sql"]
 
@@ -46,7 +46,7 @@ def _extract_search_query(context: ExecutionContext, tool_call_id: str) -> str:
     return ""
 
 
-def search_compressor(content: ExecutionContext, tool_result: ToolResult):
+def search_compressor(context: ExecutionContext, tool_result: ToolResult):
     """基于查询的向量检索压缩搜索结果."""
     if tool_result.name not in {"search_web", "search_documents"}:
         return None
@@ -54,7 +54,7 @@ def search_compressor(content: ExecutionContext, tool_result: ToolResult):
         return None
 
     original_content = tool_result.content[0]
-    query = _extract_search_query(content, tool_result.tool_call_id)
+    query = _extract_search_query(context, tool_result.tool_call_id)
     if not query:
         return None
 
@@ -63,17 +63,17 @@ def search_compressor(content: ExecutionContext, tool_result: ToolResult):
             isinstance(document, str) for document in original_content
         ):
             return None
-        chunks = original_content
+        chunks: list[str] = original_content
     else:
         if isinstance(original_content, list):
+            web_items = [item for item in original_content if isinstance(item, Mapping)]
             web_text = "\n\n".join(
                 "\n".join(
                     str(value)
                     for key in ("title", "content", "url")
                     if (value := item.get(key))
                 )
-                for item in original_content
-                if isinstance(item, Mapping)
+                for item in web_items
             )
         elif isinstance(original_content, str):
             web_text = original_content
@@ -88,7 +88,7 @@ def search_compressor(content: ExecutionContext, tool_result: ToolResult):
     embeddings = get_embeddings(chunks)
     results = vector_search(query, chunks, embeddings, top_k=3)
     compressed: list[str] = [result["chunk"] for result in results]
-    result_content: list[str | dict]
+    result_content: list[str | list[str] | list[dict]]
     if tool_result.name == "search_documents":
         result_content = [*compressed]
     else:

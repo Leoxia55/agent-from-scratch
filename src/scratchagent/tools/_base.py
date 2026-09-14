@@ -7,11 +7,10 @@ from __future__ import annotations
 
 import inspect
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
     overload,
 )
 
@@ -21,15 +20,15 @@ if TYPE_CHECKING:
     from ..llm import LlmRequest
 
 from ._helpers import (
-    function_to_input_schema,
     format_tool_definition,
+    function_to_input_schema,
 )
 
 
 class BaseTool(ABC):
     """所有工具的抽象基类."""
 
-    DEFAULT_COMFIRMATION_TEMPLATE = (
+    DEFAULT_CONFIRMATION_TEMPLATE = (
         "The Agent wants to execute '{name}' with arguments: {arguments}." "你同意吗?"
     )
 
@@ -37,7 +36,7 @@ class BaseTool(ABC):
         self,
         name: str | None = None,
         description: str | None = None,
-        tool_definition: Dict[str, Any] | None = None,
+        tool_definition: dict[str, Any] | None = None,
         required_confirmation: bool = False,
         confirmation_message_template: str | None = None,
     ):
@@ -48,11 +47,11 @@ class BaseTool(ABC):
         self.confirmation_message_template = (
             confirmation_message_template
             if confirmation_message_template
-            else self.DEFAULT_COMFIRMATION_TEMPLATE
+            else self.DEFAULT_CONFIRMATION_TEMPLATE
         )
 
     @property
-    def tool_definition(self) -> Dict[str, Any] | None:
+    def tool_definition(self) -> dict[str, Any] | None:
         return self._tool_definition
 
     def get_confirmation_message(self, arguments: dict) -> str:
@@ -84,7 +83,7 @@ class FunctionTool(BaseTool):
         func: Callable[..., Any],
         name: str | None = None,
         description: str | None = None,
-        tool_definition: Dict[str, Any] | None = None,
+        tool_definition: dict[str, Any] | None = None,
         sandbox_executable: bool = False,
         required_confirmation: bool = False,
         confirmation_message_template: str = "",
@@ -128,7 +127,7 @@ class FunctionTool(BaseTool):
             return await result
         return result
 
-    def _generate_definition(self) -> Dict[str, Any]:
+    def _generate_definition(self) -> dict[str, Any]:
         """根据函数签名生成工具定义."""
         parameters = function_to_input_schema(self.func)
         return format_tool_definition(

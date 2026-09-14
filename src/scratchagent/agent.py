@@ -8,47 +8,50 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections.abc import Callable, Iterable
 from pathlib import Path, PurePosixPath
-from typing import Any, List, Optional, Type, Callable
+from typing import Any
+
 from pydantic import BaseModel
 
-from .llm import LlmClient, LlmRequest, LlmResponse
-from .types import (
-    Message,
-    ToolCall,
-    ToolResult,
-    Event,
-)
 from .context import (
-    ExecutionContext,
     AgentResult,
+    ExecutionContext,
     PendingToolCall,
     ToolConfirmation,
 )
-from .tools import (
-    format_tool_definition,
-    BaseTool,
-    FunctionTool,
-    MemoryTool,
-    execute_python_in_e2b,
-    upload_file_to_e2b,
-    base_e2b_tool,
-)
+from .llm import LlmClient, LlmRequest, LlmResponse
 from .memory import (
     BaseSessionManager,
     TaskMemoryManager,
 )
 from .sandbox import (
+    close_e2b_sandbox,
     create_e2b_sandbox,
     register_sandbox_tools,
-    close_e2b_sandbox,
 )
 
 # skills import
-from ._skills import (
+from .skills import (
     SkillInfo,
     discover_skills,
     generate_skills_prompt,
+)
+from .tools import (
+    BaseTool,
+    FunctionTool,
+    MemoryTool,
+    base_e2b_tool,
+    execute_python_in_e2b,
+    format_tool_definition,
+    upload_file_to_e2b,
+)
+from .types import (
+    ContentItem,
+    Event,
+    Message,
+    ToolCall,
+    ToolResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,21 +63,21 @@ class Agent:
     def __init__(
         self,
         model: LlmClient | None = None,  # 修改为可选，在run 入口加守卫
-        tools: List[BaseTool] | None = None,
+        tools: list[BaseTool] | None = None,
         instruction: str = "",
         name: str = "agent",
         max_steps: int = 10,
         description: str = "",
-        output_type: Optional[Type[BaseModel]] = None,
-        # ch05 rag and callback
+        output_type: type[BaseModel] | None = None,
+        # rag and callback
         before_tool_callbacks: list[Callable] | None = None,
         after_tool_callbacks: list[Callable] | None = None,
-        # ch06 memory
-        session_manager: Optional[BaseSessionManager] = None,
-        memory_manager: Optional[TaskMemoryManager] = None,
+        # memory
+        session_manager: BaseSessionManager | None = None,
+        memory_manager: TaskMemoryManager | None = None,
         before_llm_callbacks: list[Callable] | None = None,
-        # ch08 sandbox and skills
-        code_execution: Optional[str] = None,
+        # sandbox and skills
+        code_execution: str | None = None,
         skills_path: str | None = None,
         # multi-agents
         sub_agents: list[Agent] | None = None,
@@ -87,6 +90,7 @@ class Agent:
         self.description = description
         self.output_type = output_type
         self.output_tool_name: str | None = None
+
         self.session_manager = session_manager
         self.memory_manager = memory_manager
         self.before_tool_callbacks = before_tool_callbacks or []
@@ -99,7 +103,7 @@ class Agent:
         self.disallow_transfer_to_peers = disallow_transfer_to_peers
         self.parent: Agent | None = None
 
-        self._sandbox_tools: List[FunctionTool] = []
+        self._sandbox_tools: list[FunctionTool] = []
         self.tools = self._setup_tools(tools or [])
 
         # Set up sub-agent relationships
@@ -139,11 +143,11 @@ class Agent:
         elif context.memory_manager is None:
             context.memory_manager = self.memory_manager
 
-        # Set up code execution environment before resuming pending tool calls.
+        # 恢复待处理工具调用前，搭建代码执行环境.
         if self.code_execution == "e2b" and context.code_env is None:
             await self._setup_code_env(context)
 
-        # Handle tool confirmations after an E2B environment is available.
+        # 在 E2B 环境就绪后处理工具确认信息.
         if tool_confirmations:
             await self._process_confirmations(context, tool_confirmations)
             pending = [
@@ -170,17 +174,14 @@ class Agent:
             )
             context.add_event(user_event)
 
-        # Set up code execution environment if needed
-        # if self.code_execution == "e2b" and context.code_env is None:
-        #    await self._setup_code_env(context)
 
         terminal = False
-        # Loop execution
+        # 循环执行
         try:
             while not context.final_result and context.current_step < self.max_steps:
                 result = await self.step(context, verbose=verbose)
 
-                # Check for pending tool calls(human-in-the-loop)
+                # 检查待处理的工具调用(human-in-the-loop)
                 if result and result.status == "pending":
                     if session and self.session_manager:
                         session.events = list(context.events)
@@ -193,23 +194,23 @@ class Agent:
                     if self._is_final_response(last_event):
                         context.final_result = self._extract_final_result(last_event)
 
-                # Check for agent transfer
+                # 检查是否需要转接智能代理
                 if context.transfer_to:
                     target_name = context.transfer_to
                     context.transfer_to = None
                     target = self._find_agent(target_name)
                     if target:
                         return await target.run(context=context, verbose=verbose)
-
+            
             terminal = True
-            # save memory
+            # 保存记忆
             if self.memory_manager:
                 try:
                     await self.memory_manager.save(context)
                 except Exception as e:
                     logger.warning(f"Failed to save memory:{e}")
 
-            # save session
+            # 保存会话
             if session and self.session_manager:
                 session.events = list(context.events)
                 session.state = dict(context.state)
@@ -250,7 +251,7 @@ class Agent:
                     raise TypeError(
                         "before_llm_callbacks must return LlmResponse or None"
                     )
-                # callback provided a response, skip llm call
+                # 回调已返回响应，跳过大模型调用
                 llm_response = cb_result
                 break
         else:  # 如果上面的for 循环没有 llm_response 就 break 或者结束了
@@ -285,13 +286,13 @@ class Agent:
     async def act(
         self,
         context: ExecutionContext,
-        tool_calls: List[ToolCall],
+        tool_calls: list[ToolCall],
         verbose: bool = False,
     ) -> AgentResult | None:
         """Execute the tools requested by the LLM."""
         tools_dict = {tool.name: tool for tool in self.tools}
-        results = []
-        pending = []
+        results: list[ToolResult] = []
+        pending: list[PendingToolCall] = []
 
         for tool_call in tool_calls:
             if tool_call.name not in tools_dict:
@@ -307,25 +308,7 @@ class Agent:
 
             tool_obj = tools_dict[tool_call.name]
 
-            # try:
-            #     arguments = json.loads(tool_call.arguments)
-            #     # 工具的执行
-            #     output = await tool_obj(context, **arguments)
-            #     results.append(ToolResult(
-            #         tool_call_id=tool_call.tool_call_id,
-            #         name=tool_call.name,
-            #         status="success",
-            #         content=[output],
-            #     ))
-            # except Exception as e:
-            #     results.append(ToolResult(
-            #         tool_call_id=tool_call.tool_call_id,
-            #         name=tool_call.name,
-            #         status="error",
-            #         content=[str(e)],
-            #     ))
-
-            # check if tool requires confirmation (human-in-the-loop)
+            # 检查工具执行是否需要确认 (human-in-the-loop)
             if tool_obj.required_confirmation:
                 arguments = tool_call.arguments
                 if isinstance(arguments, str):
@@ -359,7 +342,7 @@ class Agent:
             if skip:
                 continue
 
-            # Execute the tool
+            # 工具调用
             try:
                 arguments = tool_call.arguments
                 if isinstance(arguments, str):
@@ -380,7 +363,7 @@ class Agent:
                     content=[str(e)],
                 )
 
-            # NEW: after tool callback
+            # NEW: 工具回调
             for callback in self.after_tool_callbacks:
                 callback_result = callback(context, tool_result)
                 if hasattr(callback_result, "__await__"):
@@ -395,9 +378,9 @@ class Agent:
                 )
             results.append(tool_result)
 
-        # if there are pending confirmations, pause execution
+        # 如果存在待确认事项，则暂停执行
         if pending:
-            # Store pending calls in context state
+            # 将待处理调用存储到上下文状态中, 通过 .model_dump() 系列化
             context.state["pending_tool_calls"] = [p.model_dump() for p in pending]
             # still record any result we have
             if results:
@@ -413,7 +396,7 @@ class Agent:
                 status="pending",
                 pending_tool_calls=pending,
             )
-        # Record tool results
+        # 记录工具执行结果
         if results:
             tool_event = Event(
                 execution_id=context.execution_id,
@@ -422,27 +405,22 @@ class Agent:
             )
             context.add_event(tool_event)
 
-        # handle transfer_to
-        # for result in results:
-        #     if result.name == "transfer_to_agent" and result.status == "success":
-        #         # The transfer tool sets context.transfer_to
-        #         pass
-        # return None
+        return None
 
     async def _prepare_llm_request(self, context: ExecutionContext) -> LlmRequest:
-        """Build an LlmRequest from the current context."""
-        flat_contents = []
+        """基于当前上下文构建一个大语言模型请求 LlmRequest"""
+        flat_contents: list[ContentItem] = []
         for event in context.events:
             flat_contents.extend(event.content)
 
-        instructions = []
+        instructions: list[str] = []
         if self.instruction:
             instructions.append(self.instruction)
         sandbox_prompt = self._get_sandbox_tools_prompt()
         if sandbox_prompt:
             instructions.append(sandbox_prompt)
 
-        # Add skills prompt if available
+        # 如果有可用的技能提示词，则添加。
         if self.skills_path:
             try:
                 skills = discover_skills(self.skills_path)
@@ -452,7 +430,7 @@ class Agent:
             except Exception:
                 pass
 
-        # Filter tools that should be exposed to the LLM
+        # 向大语言模型开放的筛选工具
         llm_tools = [t for t in self.tools if t.tool_definition is not None]
 
         # determine tool choice strategy
@@ -471,7 +449,7 @@ class Agent:
             tool_choice=tool_choice,
         )
 
-        # Let tools modify the request
+
         # 准备 LLM 请求后，会让每个工具处理请求,
         # 这正好触发 MemoryTool.process_llm_request()，实现自动注入
         for tool_obj in self.tools:
@@ -480,7 +458,7 @@ class Agent:
         return request
 
     def _is_final_response(self, event: Event) -> bool:
-        """Check if this event contains a final response"""
+        """检查此事件是否包含最终响应"""
         if self.output_tool_name:
             for item in event.content:
                 if (
@@ -514,7 +492,7 @@ class Agent:
 
     def _setup_tools(
         self,
-        tools: list[BaseTool | Callable[..., Any]],
+        tools: Iterable[BaseTool | Callable[..., Any]],
     ) -> list[BaseTool]:
         """Prepare the tools list, wrapping plain callables as FunctionTool objects."""
         prepared_tools: list[BaseTool] = []
@@ -562,7 +540,7 @@ class Agent:
 
         # add sandbox-executable tools
         # 1) 过滤无效的沙箱工具
-        invalid_sandbox_tools = []
+        invalid_sandbox_tools: list[str] = []
         for tool in prepared_tools:
             if not isinstance(tool, FunctionTool) or not tool.sandbox_executable:
                 continue
@@ -610,9 +588,11 @@ class Agent:
         await self._setup_code_env(context)
         context.code_env_owned = not caller_owns_sandbox
 
-    async def _setup_code_env(self, context: ExecutionContext):
+    async def _setup_code_env(self, context: ExecutionContext) -> None:
         """Set up E2B sandbox environment and upload configured skills."""
-        sandbox = await asyncio.to_thread(create_e2b_sandbox)
+        sandbox = await asyncio.to_thread(
+            create_e2b_sandbox, allow_internet_access=True
+        )
         try:
             await asyncio.to_thread(
                 register_sandbox_tools, sandbox, self._sandbox_tools
@@ -687,14 +667,14 @@ class Agent:
         self,
         context: ExecutionContext,
         confirmations: list[ToolConfirmation],
-    ):
+    ) -> None:
         """Process tool confirmations from human-in-the-loop"""
         raw_pending = context.state.get("pending_tool_calls", [])
         pending = [PendingToolCall.model_validate(d) for d in raw_pending]
 
         tools_dict = {t.name: t for t in self.tools}
-        results = []
-        remaining = []
+        results: list[ToolResult] = []
+        remaining: list[PendingToolCall] = []
         supplied_ids = {c.tool_call_id for c in confirmations}
 
         for pending_call in pending:
@@ -755,7 +735,7 @@ class Agent:
             )
             context.add_event(tool_event)
 
-    def _log_response(self, response: LlmResponse):
+    def _log_response(self, response: LlmResponse) -> None:
         """Log LLM response for verbose mode."""
         for item in response.content:
             if isinstance(item, Message):
@@ -764,7 +744,7 @@ class Agent:
                 logger.info(f"[{self.name}] Tool Call: {item.name}({item.arguments})")
 
     # handle multi-agents
-    def _get_transfer_targets(self) -> List[Agent]:
+    def _get_transfer_targets(self) -> list[Agent]:
         """List of targets the current agent can transfer to"""
 
         targets: list[Agent] = []

@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Callable
-
-from ..context import ExecutionContext, AgentResult, ToolConfirmation
-
+from collections.abc import Callable
 
 from ..agent import Agent
+from ..context import AgentResult, ExecutionContext, ToolConfirmation
 
 StopCondition = Callable[[AgentResult, int], bool]
 
@@ -17,7 +15,7 @@ class LoopWorkFlow(Agent):
 
     def __init__(
         self,
-        agents: List[Agent],
+        agents: list[Agent],
         stop_condition: StopCondition | None = None,
         max_iterations: int = 10,
         name: str = "loop_workflow",
@@ -26,7 +24,6 @@ class LoopWorkFlow(Agent):
         self.agents = agents
         self.stop_condition = stop_condition
         self.max_iterations = max_iterations
-        self.name = name
 
     async def run(
         self,
@@ -37,6 +34,9 @@ class LoopWorkFlow(Agent):
         tool_confirmations: list[ToolConfirmation] | None = None,
         verbose: bool = False,
     ) -> AgentResult:
+
+        if not self.agents:
+            raise ValueError("Workflow received an empty agents list.")
 
         if context is None:
             context = ExecutionContext()
@@ -69,8 +69,6 @@ class LoopWorkFlow(Agent):
             ):
                 break
 
-        if result is None:
-            raise ValueError(
-                "Workflow received an empty agents list."
-            )  # 见下文附带 bug
+        # agents 非空，循环至少跑一次，result 一定被赋值
+        assert result is not None
         return result

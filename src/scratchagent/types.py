@@ -1,8 +1,11 @@
 """核心的数据类型"""
 
+from __future__ import annotations
+
 import uuid
-from typing import List, Literal, TypeAlias, Any
+from collections.abc import Sequence
 from datetime import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +34,9 @@ class ToolResult(BaseModel):
     tool_call_id: str
     name: str
     status: Literal["success", "error"]
-    content: list[str | dict]
+    # 工具返回值可以是字符串、嵌套列表、字典，或任意可序列化对象
+    # （例如 output_type 场景下 final_answer 工具返回的 BaseModel 实例）。
+    content: list[Any]
 
 
 class SummaryMessage(BaseModel):
@@ -42,7 +47,7 @@ class SummaryMessage(BaseModel):
 
 
 # 对四种类型信息的一个打包封装，构成一个 ContentItem，可以表示4个类型当中的任何一种
-# ContentItem = Union[Message, ToolCall, ToolResult, SummaryMessage]
+# PEP‑695 类型别名 + PEP‑604 联合类型
 type ContentItem = Message | ToolCall | ToolResult | SummaryMessage
 
 
@@ -53,4 +58,4 @@ class Event(BaseModel):
     execution_id: str
     timestamp: float = Field(default_factory=lambda: datetime.now().timestamp())
     author: str  # "user" or agent name
-    content: List[ContentItem] = Field(default_factory=list)
+    content: Sequence[ContentItem] = Field(default_factory=list)

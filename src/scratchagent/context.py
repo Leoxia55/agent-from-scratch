@@ -1,8 +1,11 @@
 """智能体框架的执行上下文与结果类型"""
 
+from __future__ import annotations
+
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Literal
+from typing import Any, Literal
+
 from pydantic import BaseModel
 
 from .types import Event, ToolCall
@@ -13,30 +16,30 @@ class ExecutionContext:
     """所有运行期间执行状态的存储中心"""
 
     execution_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    events: List[Event] = field(default_factory=list)
+    events: list[Event] = field(default_factory=list)
     current_step: int = 0
-    state: Dict[str, Any] = field(default_factory=dict)
+    state: dict[str, Any] = field(default_factory=dict)
     final_result: str | BaseModel | None = None
 
     # 会话管理
-    session: Optional[Any] = None
-    session_manager: Optional[Any] = None
+    session: Any | None = None
+    session_manager: Any | None = None
     # 记忆管理
-    memory_manager: Optional[Any] = None
+    memory_manager: Any | None = None
 
     # 代码执行环境 "Sandbox" 沙箱
-    code_env: Optional[Any] = None
+    code_env: Any | None = None
     # True only when this Agent created the sandbox and owns its cleanup.
     code_env_owned: bool = False
     # Multi-Agent 中 转移模式
-    transfer_to: Optional[str] = None
-    transfer_tools: Dict[str, Any] = field(default_factory=dict)
+    transfer_to: str | None = None
+    transfer_tools: dict[str, Any] = field(default_factory=dict)
 
-    def add_event(self, event: Event):
+    def add_event(self, event: Event) -> None:
         """追加一个event 到执行历史中"""
         self.events.append(event)
 
-    def increment_step(self):
+    def increment_step(self) -> None:
         """移到下一步，计数器+1"""
         self.current_step += 1
 

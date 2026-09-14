@@ -1,21 +1,17 @@
 """E2B 代码解释器沙箱集成"""
 
 import os
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
-from dotenv import load_dotenv
+from typing import Any
+
+from ..config import load_project_env
 
 DEFAULT_TIMEOUT_SECONDS = 300
 
 
 class E2BSandboxConfigurationError(RuntimeError):
     """当 E2B 沙箱无法完成配置时抛出."""
-
-
-def _load_project_environment() -> None:
-    """在不覆盖进程变量的前提下加载仓库环境."""
-    project_root = Path(__file__).resolve().parents[3]
-    load_dotenv(project_root / ".env", override=False)
 
 
 def create_e2b_sandbox(
@@ -31,7 +27,7 @@ def create_e2b_sandbox(
     disabled by default and must be explicitly enabled by the caller. Set
     ``E2B_TEMPLATE_ID`` (or ``E2B_TEMPLATE``) to use a custom E2B template.
     """
-    _load_project_environment()
+    load_project_env()
     resolved_key = api_key or os.getenv("E2B_API_KEY")
     template = template or os.getenv("E2B_TEMPLATE_ID") or os.getenv("E2B_TEMPLATE")
     if not resolved_key:
@@ -52,8 +48,6 @@ def create_e2b_sandbox(
         if template:
             create_options["template"] = template
         return Sandbox.create(**create_options)
-    except E2BSandboxConfigurationError:
-        raise
     except Exception as exc:
         raise E2BSandboxConfigurationError("Failed to create the E2B sandbox.") from exc
 

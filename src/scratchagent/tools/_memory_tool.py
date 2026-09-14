@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from ..types import Message
 from ..context import ExecutionContext
+from ..types import Message
 from ._base import BaseTool
 
 if TYPE_CHECKING:
-    from ..memory import TaskMemory
     from ..llm import LlmRequest
+    from ..memory import TaskMemory
 
 
 class MemoryTool(BaseTool):

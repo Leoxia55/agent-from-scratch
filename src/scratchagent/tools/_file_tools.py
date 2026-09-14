@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 from typing import Any, cast
 
-from dotenv import find_dotenv, load_dotenv
+from ..config import load_project_env
 
 # Load environment variables from .env file
 # load_dotenv(find_dotenv()) 在jupyter 文件中可以简单的加载环境变量
@@ -29,16 +29,6 @@ SPREADSHEET_EXTENSIONS = [".xlsx", ".xls", ".csv"]
 IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"]
 AUDIO_EXTENSIONS = [".mp3", ".wav", ".m4a", ".flac", ".ogg", ".webm"]
 PDF_EXTENSIONS = [".pdf"]
-
-
-def load_project_env() -> None:
-    """加载最近的.env 文件，且不暴露或覆盖已有变量值。
-    已存在的进程环境变量优先级高于.env 文件内的变量。
-    此举可保证测试、持续集成以及手动导出的 Shell 变量结果可复现。
-    """
-    env_file = find_dotenv(usecwd=True)
-    if env_file:
-        load_dotenv(env_file, override=False)
 
 
 def unzip_file(zip_path: str, extract_to: str | None = None) -> str:
@@ -96,7 +86,7 @@ def list_files(path: str = ".") -> str:
     dirs = [i for i in items if i.endswith("/")]
     files = [i for i in items if not i.endswith("/")]
 
-    result = f"Directory: {directory}\n"
+    result: str = f"Directory: {directory}\n"
     for item in dirs + files:
         result += f"  {item}\n"
 

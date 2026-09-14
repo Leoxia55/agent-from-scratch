@@ -1,7 +1,7 @@
 """一个轻量级的 LLM 客户端，支持多种服务商类型的 LiteLLM SDK 封装辅助工具。"""
 
 import json
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, cast
 
 from litellm import acompletion
 from pydantic import BaseModel, Field
@@ -9,12 +9,15 @@ from pydantic import BaseModel, Field
 from ..tools import BaseTool
 from ..types import (
     ContentItem,
-    Message as CoreMessage,
-    SummaryMessage,
-    ToolCall,
-    ToolResult,
 )
-from ._config import LLMConfigError, ModelConfig, Provider, resolve_model_config
+from ..types import Message as CoreMessage
+from ..types import SummaryMessage, ToolCall, ToolResult
+from ._config import (
+    LLMConfigError,
+    ModelConfig,
+    Provider,
+    resolve_model_config,
+)
 
 
 class LlmRequest(BaseModel):
@@ -22,11 +25,11 @@ class LlmRequest(BaseModel):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    instructions: List[str] = Field(default_factory=list)
-    contents: List[ContentItem] = Field(default_factory=list)
-    tools: List[BaseTool] = Field(default_factory=list)
-    tool_choice: Optional[str] = None
-    model_id: Optional[str] = None
+    instructions: list[str] = Field(default_factory=list)
+    contents: list[ContentItem] = Field(default_factory=list)
+    tools: list[BaseTool] = Field(default_factory=list)
+    tool_choice: str | None = None
+    model_id: str | None = None
 
     def append_instructions(self, text: str) -> None:
         """Append a single instruction string to the instructions list."""
@@ -36,9 +39,9 @@ class LlmRequest(BaseModel):
 class LlmResponse(BaseModel):
     """用于处理大语言模型调用响应的对象。Response object from LLM calls."""
 
-    content: List[ContentItem] = Field(default_factory=list)
-    error_message: Optional[str] = None
-    usage_metadata: Dict[str, Any] = Field(default_factory=dict)
+    content: list[ContentItem] = Field(default_factory=list)
+    error_message: str | None = None
+    usage_metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class LlmClient:
@@ -98,8 +101,8 @@ class LlmClient:
     async def ask(
         self,
         prompt: str,
-        response_format: Optional[Type[BaseModel]] = None,
-    ) -> Union[str, BaseModel]:
+        response_format: type[BaseModel] | None = None,
+    ) -> str | BaseModel:
         """用于一次性提示词并支持可选结构化输出的便捷方法."""
         if response_format is not None:
             schema_text = json.dumps(response_format.model_json_schema())
@@ -137,9 +140,9 @@ class LlmClient:
         return response_format.model_validate_json(cleaned.strip())
 
 
-def build_messages(request: LlmRequest) -> List[dict[str, Any]]:
+def build_messages(request: LlmRequest) -> list[dict[str, Any]]:
     """将大模型请求（LlmRequest）转换为接口消息格式."""
-    messages: List[dict[str, Any]] = []
+    messages: list[dict[str, Any]] = []
 
     for instruction in request.instructions:
         messages.append({"role": "system", "content": instruction})
@@ -190,7 +193,7 @@ def _parse_response(response: Any) -> LlmResponse:
     if message is None:
         return LlmResponse(error_message="LLM response did not contain a message")
 
-    content_items: List[ContentItem] = []
+    content_items: list[ContentItem] = []
     message_content = getattr(message, "content", None)
     if isinstance(message_content, str) and message_content:
         content_items.append(CoreMessage(role="assistant", content=message_content))

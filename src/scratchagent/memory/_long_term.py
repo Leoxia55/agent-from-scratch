@@ -1,22 +1,24 @@
 """借助 ChromaDB 实现长期记忆，用于任务记忆的存储与检索"""
 
+import os
 import uuid
 from typing import Any, cast
 
-from pydantic import BaseModel, Field
-
 import chromadb
+import openai
 from chromadb.api.types import QueryResult
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+from pydantic import BaseModel, Field
 
 from ..context import ExecutionContext
+from ..llm import LlmClient
 from ..types import (
     Event,
     Message,
     ToolCall,
     ToolResult,
 )
-from ..llm import LlmClient
+from ..config import load_project_env
 
 
 class TaskMemory(BaseModel):
@@ -86,16 +88,31 @@ class TaskMemoryManager:
         self.llm_client = llm_client
 
         # ChromaDB setup
+        # chromadb.PersistentClient(path="./.memory_db")
+
+        # 加载一下环境变量
+        load_project_env()
+
         self.client = chromadb.Client()
         embedding_fn = OpenAIEmbeddingFunction(
-            # api_key =
-            # api_base =
-            model_name="text-embedding-3-small"
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            api_base=os.getenv("OPENROUTER_BASE_URL"),
+            model_name=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+        )
+        # OpenAIEmbeddingFunction 内部创建的 openai.OpenAI 客户端 connect 超时仅 5s，
+        # 访问 OpenRouter 时 TLS 握手偶发超过 5s 导致 ConnectTimeout。
+        # 这里替换为带更长 timeout 的客户端，避免 embedding 请求偶发超时。
+        embedding_fn.client = openai.OpenAI(
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            base_url=os.getenv("OPENROUTER_BASE_URL"),
+            timeout=60.0,
         )
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
             embedding_function=cast(Any, embedding_fn),
         )
+
+
 
     async def _extract_memory(self, execution_history: str) -> TaskMemory | None:
         """Extract structured memory from execution history."""
@@ -181,10 +198,15 @@ class TaskMemoryManager:
             return None
 
         # 3. Duplicate check using the same text used for storage
-        existing = self.collection.query(
-            query_texts=[memory.to_embedding_text()],
-            n_results=3,
-        )
+        try:
+            existing = self.collection.query(
+                query_texts=[memory.to_embedding_text()],
+                n_results=3,
+            )
+        except Exception as e:
+            # embedding 调用偶发网络超时，优雅降级：跳过重复检查，直接尝试入库
+            print(f"Memory duplicate check failed (skipping): {e}")
+            existing = {"metadatas": [[], []]}
         if await self._is_duplicate(memory, existing):
             return None
 
@@ -193,19 +215,36 @@ class TaskMemoryManager:
         metadata = memory.model_dump()
         # ChromaDB metadata cannot store None values
         metadata = {k: ("" if v is None else v) for k, v in metadata.items()}
-        self.collection.add(
-            ids=[memory_id],
-            documents=[memory.to_embedding_text()],
-            metadatas=[metadata],
-        )
+        try:
+            self.collection.add(
+                ids=[memory_id],
+                documents=[memory.to_embedding_text()],
+                metadatas=[metadata],
+            )
+        except Exception as e:
+            # 入库时 embedding 调用失败，优雅降级：放弃本次保存
+            print(f"Failed to store memory: {e}")
+            return None
         return memory_id
 
     async def search(self, query: str, top_k: int = 5) -> list[TaskMemory]:
         """Search for memories related to the query."""
-        results = self.collection.query(
-            query_texts=[query],
-            n_results=top_k,
-        )
+        # 空库直接返回，避免无意义的 embedding 调用（embedding 需联网，网络不稳时易超时）
+        try:
+            if self.collection.count() == 0:
+                return []
+        except Exception:
+            pass
+
+        try:
+            results = self.collection.query(
+                query_texts=[query],
+                n_results=top_k,
+            )
+        except Exception as e:
+            # embedding 调用偶发网络超时，优雅降级：视为无匹配记忆，不中断主流程
+            print(f"Memory search failed (falling back to no memory): {e}")
+            return []
 
         metadatas = results["metadatas"]
         if not metadatas or not metadatas[0]:

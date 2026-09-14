@@ -8,7 +8,10 @@ API 密钥以及 API 基础地址，而非依赖 LiteLLM 全局状态。
 import os
 from dataclasses import dataclass
 from enum import StrEnum
+
 from dotenv import find_dotenv, load_dotenv
+
+from ..config import load_project_env
 
 
 class LLMConfigError(RuntimeError):
@@ -37,18 +40,6 @@ class ModelConfig:
     api_key: str | None = None
     api_base: str | None = None
     use_chat_completions_api: bool = False
-
-
-def load_project_env() -> None:
-    """加载最近的.env 文件，且不暴露或覆盖已有变量值。
-
-    已存在的进程环境变量优先级高于.env 文件内的变量。
-    此举可保证测试、持续集成以及手动导出的 Shell 变量结果可复现。
-    """
-
-    env_file = find_dotenv(usecwd=True)
-    if env_file:
-        load_dotenv(env_file, override=False)
 
 
 def resolve_provider(provider: Provider | str) -> Provider:

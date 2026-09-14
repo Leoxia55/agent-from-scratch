@@ -1,15 +1,27 @@
 # ScratchAgent
 
-从零开始编写智能体（Agent）的教学型 Python 项目。
+> **用约 3700 行代码，从第一性原理手写一个 AI Agent——让你从「会开车」到「会造车」。**
+
+**为什么会有这个项目？** 学操作系统，就该写一个迷你 OS 来理解它；学数据库，就该写一个迷你数据库。学 Agent 开发，如果只是用现成的框架（LangChain / CrewAI / AutoGen 等）搭一搭，而不理解智能体内部的运行机制，就很难真正落地。
+
+**用 Agent 好比开车，但要修车、甚至造车，就必须从底层原理出发——哪怕是造一辆简易的车，也能真正建立对「车」的技术理解。** 这个项目就是那辆「简易的车」：它用**约 3700 行可通读的 Python 代码**，把一个智能体拆成像乐高积木一样的基础部件，逐层拼装，最后通过 `examples/` 目录下 **20 个可运行示例**展示完整的智能体能力。
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.13](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
+[![mypy: strict](https://img.shields.io/badge/mypy-strict-green.svg)](pyproject.toml)
+[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 本项目的目标不是提供一个“调用几行代码就完成一切”的黑盒框架，而是把智能体拆成可以阅读、调试和替换的基础部件，帮助你理解：模型如何决定下一步、工具如何被描述和执行、上下文如何持续、错误如何回传，以及多个智能体如何协作。
 
 项目**不使用第三方智能体 SDK 或 Agent Framework 来实现核心循环**。项目使用 LiteLLM、Pydantic、OpenAI 兼容客户端、ChromaDB、Tavily、E2B 等基础库接入模型和基础设施，但 `Agent`、工具协议、执行上下文和编排逻辑由本项目自行实现。
 
-> 当前仓库是教学型源码。根目录目前没有官方 CLI、服务端入口、示例目录或测试用例；使用方式是由外部 Python 脚本导入 `scratchagent`。
+> **如果你觉得这个项目对你有帮助，请点一个 Star ⭐ 支持一下。** 欢迎提交 Issue、PR，或分享给同样想「理解 Agent 底层原理」的朋友。
+
+> 当前仓库是教学型源码，不提供官方 CLI 或服务端入口；使用方式是由外部 Python 脚本导入 `scratchagent`。仓库内附有 `examples/`（20 个可运行示例）、`tests/`（单元与集成测试）、`docs/`（分层文档）和 `course/`（21 章系统课程）供学习和验证。
 
 ## 目录
 
+- [核心亮点速览](#核心亮点速览)
 - [一、先定义 Agent](#一先定义-agent)
 - [二、从第一性原理拆解](#二从第一性原理拆解)
 - [三、核心执行闭环](#三核心执行闭环)
@@ -25,6 +37,17 @@
 - [十三、边界与安全提醒](#十三边界与安全提醒)
 - [十四、建议学习顺序](#十四建议学习顺序)
 - [许可证](#许可证)
+
+## 核心亮点速览
+
+| 亮点 | 说明 |
+| --- | --- |
+| 🧩 **规模恰到好处** | 约 3700 行核心源码——多到有真东西，少到能通读、能调试、能替换 |
+| 🔍 **拒绝黑盒 SDK** | 核心循环、工具协议、上下文、编排全部手写，每一步都能追到源码 |
+| 🚀 **开箱即跑** | `examples/` 下 20 个可运行示例，覆盖工具调用、记忆、RAG、沙箱、多智能体 |
+| 📚 **配套完整** | `course/` 21 章系统课程（每章：原理→源码精读→动手实验）+ `docs/` 30 篇分层文档 + `tests/` 单元与集成测试，不是「丢个仓库就走」 |
+| 🛡️ **工程严谨** | Python 3.13 现代类型注解、mypy 严格检查、black/isort 统一风格、异步优先 |
+| 🔐 **安全自觉** | Human-in-the-loop 人工审批、E2B 沙箱隔离、信任边界文档 |
 
 ## 一、先定义 Agent
 
@@ -196,6 +219,8 @@ if __name__ == "__main__":
 - `OPENAI_BASE_URL`。
 
 也可以使用 `Provider.ANTHROPIC`、`Provider.LLAMA` 或 `Provider.LM_STUDIO`。不同提供商需要各自的环境变量，具体映射见 `src/scratchagent/llm/_config.py`。
+
+项目通过 `scratchagent/config.py` 的 `load_project_env()` 统一加载 `.env`，该函数全局只加载一次，且不会覆盖进程环境中已存在的同名变量。
 
 ## 五、工具调用
 
@@ -437,7 +462,7 @@ router = Agent(
 
 ### RAG
 
-`src/scratchagent/_rag.py` 提供三个基础步骤：
+`src/scratchagent/rag.py` 提供三个基础步骤：
 
 ```python
 from scratchagent import fixed_length_chunking, get_embeddings, vector_search
@@ -502,18 +527,47 @@ Read this file before using the skill.
 .
 ├── pyproject.toml                 # 依赖、类型检查、测试和质量命令
 ├── .env.example                   # 环境变量模板
+├── LICENSE                        # 许可证
 ├── README.md                      # 教学说明
+├── examples/                      # 20 个可运行的完整示例
+│   ├── basic_agent.py             # 最小 Agent + 工具调用示例
+│   ├── callback_agent.py          # 工具调用前后回调拦截
+│   ├── human_in_loop_agent.py     # 危险工具人工确认（Human-in-the-loop）
+│   ├── planning_reflection_agent.py # 规划与反思（create_tasks / reflection）
+│   ├── session_agent.py           # 多轮会话持久化
+│   ├── memory_agent.py            # 长期记忆（ChromaDB）
+│   ├── rag_agent.py               # 检索增强生成（RAG）
+│   ├── e2b_agent.py               # E2B 沙箱执行 Python 代码
+│   ├── skill_agent.py             # Skills 技能系统 + PDF 合并
+│   ├── sequential_wf_agent.py     # 多智能体顺序编排
+│   ├── parallel_wf_agent.py       # 多智能体并行编排
+│   ├── loop_wf_agent.py           # 多智能体循环编排
+│   ├── transfer_to_agent.py       # 多智能体路由转接
+│   ├── remote_server_fast_demo.py # FastMCP MCP 服务器示例（供 fast_mcp_agent 连接）
+│   └── fast_mcp_agent.py          # FastMCP 集成示例（端到端调用 MCP 工具）
+├── tests/                         # 单元测试与集成测试
+│   ├── conftest.py                # 顶层 fixtures
+│   ├── unit/                      # 单元测试（按模块划分）
+│   └── integration/               # 集成测试
+├── course/                        # 21 章系统课程（原理 → 源码精读 → 动手实验）
+├── docs/                          # 分层文档（教程、How-to、概念、参考）
+├── labs/                          # 实验脚本（e2b/litellm/mcp/rag）
 └── src/scratchagent/
+    ├── __init__.py                # 公开 API 汇总导出
     ├── agent.py                   # Agent 主循环
-    ├── context.py                # ExecutionContext 与 AgentResult
-    ├── types.py                  # Message、ToolCall、ToolResult、Event
-    ├── _rag.py                   # 文本分块、向量检索
-    ├── _skills.py                # Skills 发现与提示词生成
+    ├── config.py                  # .env 统一加载（load_project_env）
+    ├── context.py                 # ExecutionContext 与 AgentResult
+    ├── types.py                   # Message、ToolCall、ToolResult、Event
+    ├── rag.py                     # 文本分块、向量检索
+    ├── skills.py                  # Skills 发现与提示词生成
     ├── llm/
+    │   ├── __init__.py            # LlmClient、Provider 等导出
     │   ├── _client.py             # LLM 请求/响应适配
     │   └── _config.py             # Provider 和环境变量解析
     ├── tools/
+    │   ├── __init__.py            # 工具导出
     │   ├── _base.py               # BaseTool、FunctionTool、@tool
+    │   ├── _helpers.py            # Schema 生成等工具辅助
     │   ├── _calculator.py         # 计算器示例
     │   ├── _file_tools.py         # 文件能力
     │   ├── _search.py             # Tavily 搜索
@@ -521,16 +575,19 @@ Read this file before using the skill.
     │   ├── _memory_tool.py        # 记忆注入工具
     │   └── _code_execution.py     # E2B 工具
     ├── memory/
+    │   ├── __init__.py            # 记忆模块导出
     │   ├── _session.py            # 会话抽象与内存实现
     │   ├── _long_term.py          # 任务长期记忆
     │   └── _context_optimizer.py  # 上下文管理
     ├── orchestration/
+    │   ├── __init__.py            # 工作流导出
     │   ├── _sequential.py         # 顺序工作流
     │   ├── _parallel.py           # 并行工作流
     │   ├── _loop.py               # 循环工作流
     │   ├── _transfer.py            # Agent 转移
     │   └── _planning_reflection.py # 规划与反思工具
     └── sandbox/
+        ├── __init__.py            # 沙箱模块导出
         └── _e2b_sandbox.py        # E2B 生命周期管理
 ```
 
@@ -546,29 +603,48 @@ Read this file before using the skill.
 6. 对上下文压缩和并发合并编写测试；
 7. 保持同步工具和异步工具都能被一致调用。
 
-可用命令：
+### 测试
+
+测试已落地在 `tests/` 目录，包含单元测试（`tests/unit/`）和集成测试（`tests/integration/`）。pytest 配置位于 `pyproject.toml` 的 `[tool.pytest.ini_options]`，已启用 `pythonpath = ["src"]`、`asyncio_mode = "auto"`，并预置 `e2e`、`slow` 两个 marker。
 
 ```bash
+# 运行全部测试
+uv run pytest tests/
+
+# 仅运行单元测试
+uv run pytest tests/unit/
+
+# 跳过需要真实 API Key 的端到端测试
+uv run pytest tests/ -m "not e2e"
+```
+
+### 类型检查与格式化
+
+dev 依赖包含 `mypy`、`black`、`isort` 和 `poethepoet`，可通过 poe 任务或直接命令调用：
+
+```bash
+# 类型检查
+uv run mypy src/
+
 # 格式化
 uv run black src/ examples/ tests/
 uv run isort src/ examples/ tests/
 
-# 类型检查
-uv run mypy src/ --show-error-codes
-uv run pyright src/
-
-# lint
-uv run flake8 src/ examples/ tests/
-
 # 测试与覆盖率
-uv run pytest tests/ -v
 uv run pytest tests/ --cov=src/scratchagent --cov-report=term-missing
-
-# 综合检查
-uv run poe check
 ```
 
-当前仓库尚未提供 `tests/`、`examples/`、`labs/` 或 `notebooks/` 内容；上述命令是 `pyproject.toml` 中预留的工程入口。新增功能时，应优先补充针对消息转换、工具 Schema、停止条件、确认恢复、会话恢复和并发合并的测试。
+`pyproject.toml` 中预置了以下 poe 任务：
+
+```bash
+uv run poe mypy          # 类型检查
+uv run poe test          # 运行测试
+uv run poe test-cov      # 测试 + 覆盖率
+uv run poe format-black  # black 格式化
+uv run poe format-isort  # isort 导入排序
+```
+
+新增功能时，应优先补充针对消息转换、工具 Schema、停止条件、确认恢复、会话恢复和并发合并的测试。
 
 ## 十三、边界与安全提醒
 

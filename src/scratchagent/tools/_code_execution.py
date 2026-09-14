@@ -21,7 +21,7 @@ def _execution_output(execution: Any) -> str:
     return json.dumps(serialized, indent=2, ensure_ascii=False)
 
 
-@tool(  # type: ignore[reportArgumentType]
+@tool(
     name="execute_python_in_e2b",
     description=(
         "Execute Python code in an isolated E2B sandbox. "
@@ -36,15 +36,18 @@ async def execute_python_in_e2b(context: ExecutionContext, code: str) -> str:
     return _execution_output(execution)
 
 
-@tool(  # type: ignore[reportArgumentType]
-    name="base_e2b_tool", description="Execute a shell command in an E2B sandbox."
-)
+@tool(name="base_e2b_tool", description="Execute a shell command in an E2B sandbox.")
 async def base_e2b_tool(context: ExecutionContext, command: str) -> str:
     """在 E2B 沙箱中执行 shell 命令."""
     if context.code_env is None:
         raise RuntimeError("No code execution environment available.")
 
-    result = await asyncio.to_thread(context.code_env.commands.run, command)
+    result = await asyncio.to_thread(
+        context.code_env.commands.run,
+        command,
+        timeout=0,  # 进程总时长不限制
+        request_timeout=180,  # 放宽 HTTP 请求超时，避免 pip 等长命令超时
+    )
     output_parts = []
     if getattr(result, "stdout", None):
         output_parts.append(result.stdout)
@@ -53,9 +56,7 @@ async def base_e2b_tool(context: ExecutionContext, command: str) -> str:
     return "\n".join(output_parts) if output_parts else "Command completed (no output)"
 
 
-@tool(  # type: ignore[reportArgumentType]
-    name="upload_file_to_e2b", description="Upload a local file to an E2B sandbox."
-)
+@tool(name="upload_file_to_e2b", description="Upload a local file to an E2B sandbox.")
 async def upload_file_to_e2b(
     context: ExecutionContext,
     local_path: str,

@@ -5,57 +5,61 @@
 支持工具tool 调用， 记忆、和简单的多智能体编排。
 """
 
-# 核心消息类型
-from .types import (
-    Message,
-    ToolCall,
-    ToolResult,
-    SummaryMessage,
-    ContentItem,
-    Event,
+# Agent
+from .agent import (
+    Agent,
+)
+
+# config .env
+from .config import (
+    load_project_env,
 )
 
 # 执行上下文
 from .context import (
-    ExecutionContext,
     AgentResult,
+    ExecutionContext,
     PendingToolCall,
     ToolConfirmation,
 )
 
-# RAG 增强检索
-# from ._rag import (
-#     get_embeddings,
-#     fixed_length_chunking,
-#     vector_search,
-# )
-
-# skill
-# from ._skills import (
-#     SkillInfo,
-#     discover_skills,
-#     load_skill,
-#     generate_skills_prompt,
-#     parse_frontmatter,
-# )
 # llm
-from .llm import (
-    LlmClient,
-)
+from .llm import LlmClient, Provider, resolve_model_config
 
 # Agent Orchestrator 编排
 from .orchestration import (
-    create_tasks,
-    reflection,
-    create_transfer_tool,
     LoopWorkFlow,
-    SequentialWorkFlow,
     ParallelWorkFlow,
+    SequentialWorkFlow,
+    create_tasks,
+    create_transfer_tool,
+    reflection,
 )
 
-# Agent
-from .agent import (
-    Agent,
+# RAG 增强检索
+from .rag import (
+    fixed_length_chunking,
+    get_embeddings,
+    vector_search,
+)
+
+# skill
+from .skills import (
+    SkillInfo,
+    discover_skills,
+    generate_skills_prompt,
+    load_skill,
+    parse_frontmatter,
+)
+
+# 核心消息类型
+from .types import (
+    ContentItem,
+    Event,
+    Message,
+    SummaryMessage,
+    ToolCall,
+    ToolResult,
 )
 
 __all__ = [
@@ -77,4 +81,15 @@ __all__ = [
     "create_tasks",
     "reflection",
     "create_transfer_tool",
+    "Provider",
+    "resolve_model_config",
+    "load_project_env",
+    "SkillInfo",
+    "discover_skills",
+    "load_skill",
+    "generate_skills_prompt",
+    "parse_frontmatter",
+    "get_embeddings",
+    "fixed_length_chunking",
+    "vector_search",
 ]

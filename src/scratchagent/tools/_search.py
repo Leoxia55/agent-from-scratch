@@ -1,7 +1,8 @@
 """一个使用 Tavily 的web 查询工具"""
 
 import os
-from typing import Optional, List, Dict
+from typing import Any, cast
+
 from tavily import TavilyClient
 
 
@@ -10,7 +11,7 @@ def search_web(
     max_results: int = 5,
     topic: str = "general",
     time_range: str | None = None,
-) -> List[Dict]:
+) -> list[dict[str, Any]]:
     """使用 Tavily API 进行web 查询.
 
     Args:
@@ -30,4 +31,4 @@ def search_web(
         kwargs["time_range"] = time_range
 
     response = client.search(**kwargs)
-    return response.get("results", [])
+    return cast(list[dict[str, Any]], response.get("results", []))

@@ -1,6 +1,7 @@
 """智能体的规划与反思工具"""
 
-from typing import Literal, List
+from typing import Literal
+
 from pydantic import BaseModel
 
 from ..tools import tool
@@ -21,7 +22,7 @@ class Task(BaseModel):
 
 
 @tool
-def create_tasks(tasks: List[Task]) -> str:
+def create_tasks(tasks: list[Task]) -> str:
     """Create or update a task plan.
 
     WHEN TO USE:

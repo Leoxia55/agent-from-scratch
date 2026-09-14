@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional
-
 import inspect
 import json
+from typing import TYPE_CHECKING, Any
 
 from ..context import ExecutionContext
-from ..types import ContentItem, Message, ToolCall, ToolResult, SummaryMessage
 from ..llm import LlmRequest, build_messages
+from ..types import ContentItem, Message, SummaryMessage, ToolCall, ToolResult
 
 if TYPE_CHECKING:
     from ..llm import LlmClient, LlmResponse
@@ -21,7 +20,7 @@ def create_optimizer_callback(apply_optimization, threshold: int = 50000):
     async def callback(
         context: ExecutionContext,
         request: LlmRequest,
-    ) -> Optional[LlmResponse]:
+    ) -> LlmResponse | None:
         token_count = count_tokens(request)
 
         if token_count < threshold:
@@ -81,7 +80,7 @@ def apply_sliding_window(
     contents = request.contents
 
     # Find user message position
-    user_message_idx = None
+    user_message_idx: int | None = None
     for i, item in enumerate(contents):
         if isinstance(item, Message) and item.role == "user":
             user_message_idx = i
@@ -102,12 +101,12 @@ def apply_sliding_window(
 
 
 # 用于压缩工具调用参数的工具
-TOOLCALL_COMPACTION_RULES = {
+TOOLCALL_COMPACTION_RULES: dict[str, str] = {
     "create_file": "[Content saved to file]",
 }
 
 # 用于压缩工具返回结果内容的工具
-TOOLRESULT_COMPACTION_RULES = {
+TOOLRESULT_COMPACTION_RULES: dict[str, str] = {
     "read_file": "File content from {file_path}. Re-read if needed.",
     "search_web": "Search results processed. Query: {query}. Re-search if needed.",
     "tavily_search": "Search results processed. Query: {query}. Re-search if needed.",
@@ -117,7 +116,7 @@ TOOLRESULT_COMPACTION_RULES = {
 def apply_compaction(context: ExecutionContext, request: LlmRequest) -> None:
     """Compress tool calls and results into reference messages."""
     tool_call_args: dict[str, dict[str, Any]] = {}
-    compacted = []
+    compacted: list[ContentItem] = []
 
     for item in request.contents:
         if isinstance(item, ToolCall):
@@ -208,7 +207,7 @@ async def apply_summarization(
     #         user_idx = i
     #         break
 
-    user_idx = next(
+    user_idx: int | None = next(
         (
             i
             for i, item in enumerate(contents)
@@ -219,7 +218,7 @@ async def apply_summarization(
     if user_idx is None:
         return
 
-    summary_idx = next(
+    summary_idx: int | None = next(
         (
             i
             for i in range(len(contents) - 1, -1, -1)
@@ -238,7 +237,7 @@ async def apply_summarization(
         return
 
     # Include the previous summary so each replacement remains complete.
-    history_parts = []
+    history_parts: list[str] = []
     if summary_idx is not None:
         previous_summary = contents[summary_idx]
         if isinstance(previous_summary, SummaryMessage):
@@ -256,9 +255,9 @@ async def apply_summarization(
     request.contents = preserved_prefix + [summary_item] + preserved_end
 
 
-def format_history_for_summary(items: List[ContentItem]) -> str:
+def format_history_for_summary(items: list[ContentItem]) -> str:
     """Convert ContentItem list to text for summarization."""
-    lines = []
+    lines: list[str] = []
     for item in items:
         if isinstance(item, Message):
             lines.append(f"[{item.role}]: {item.content[:500]}...")
@@ -308,7 +307,7 @@ class ContextOptimizer:
         self,
         context: ExecutionContext,
         request: LlmRequest,
-    ) -> Optional[LlmResponse]:
+    ) -> LlmResponse | None:
         """Register as before_llm_callback."""
         if count_tokens(request) < self.token_threshold:
             return None  # No optimization needed

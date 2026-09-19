@@ -206,7 +206,7 @@ class TaskMemoryManager:
         except Exception as e:
             # embedding 调用偶发网络超时，优雅降级：跳过重复检查，直接尝试入库
             print(f"Memory duplicate check failed (skipping): {e}")
-            existing = {"metadatas": [[], []]}
+            existing = cast(QueryResult, {"metadatas": [[], []]}) #降级处理
         if await self._is_duplicate(memory, existing):
             return None
 

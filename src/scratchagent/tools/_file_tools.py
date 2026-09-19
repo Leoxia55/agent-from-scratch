@@ -83,11 +83,11 @@ def list_files(path: str = ".") -> str:
             items.append(f"{item.name}")
 
     # Sort directories first
-    dirs = [i for i in items if i.endswith("/")]
-    files = [i for i in items if not i.endswith("/")]
+    dirs: list[str] = [i for i in items if i.endswith("/")]
+    files: list[str] = [i for i in items if not i.endswith("/")]
 
     result: str = f"Directory: {directory}\n"
-    for item in dirs + files:
+    for name in dirs + files:
         result += f"  {item}\n"
 
     return result

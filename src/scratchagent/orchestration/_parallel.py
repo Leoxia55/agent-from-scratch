@@ -87,6 +87,7 @@ class ParallelWorkFlow(Agent):
         通过 LlmClient.ask 做一次无工具循环的汇总，消解冲突并提炼要点；
         失败时降级回纯字符串拼接，避免单点聚合故障拖垮整个工作流。
         """
+        assert self.synthesizer is not None, "synthesizer must be set before synthesis"
         parts = "\n\n".join(
             f"【{agent.name}】\n{result.output}"
             for agent, result in zip(self.agents, results)
@@ -99,7 +100,7 @@ class ParallelWorkFlow(Agent):
         try:
             synthesized = await self.synthesizer.ask(prompt)
             if synthesized:
-                return synthesized
+                return str(synthesized) # ask 方法的返回标注比较宽）
         except Exception as exc:
             logger.warning("Parallel synthesis failed: %s", exc)
         return "\n\n".join(

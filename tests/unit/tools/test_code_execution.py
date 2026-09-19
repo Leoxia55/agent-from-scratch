@@ -68,7 +68,13 @@ class TestBaseE2bTool:
         ctx = ExecutionContext()
         result = type("R", (), {"stdout": "out", "stderr": "err"})()
         ctx.code_env = type(
-            "Env", (), {"commands": type("C", (), {"run": lambda s, c: result})()}
+            "Env",
+            (),
+            {
+                "commands": type(
+                    "C", (), {"run": lambda s, c, **kw: result}
+                )()
+            },
         )()
         out = await base_e2b_tool(ctx, command="ls")
         assert "out" in out
@@ -78,7 +84,13 @@ class TestBaseE2bTool:
         ctx = ExecutionContext()
         result = type("R", (), {"stdout": "", "stderr": ""})()
         ctx.code_env = type(
-            "Env", (), {"commands": type("C", (), {"run": lambda s, c: result})()}
+            "Env",
+            (),
+            {
+                "commands": type(
+                    "C", (), {"run": lambda s, c, **kw: result}
+                )()
+            },
         )()
         out = await base_e2b_tool(ctx, command="ls")
         assert "no output" in out

@@ -2,11 +2,11 @@
 
 ## 7.1 核心问题
 
-Agent 要真正"动手"，就得能调用外部工具——搜索、计算、读写文件、执行代码……但这些工具原本只是普通的 Python 函数。LLM 无法直接"看到"一个 Python 函数，它需要一个结构化的**工具描述（JSON Schema）**才知道"有哪些工具、每个工具要什么参数"。
+Agent 要真正"动手"，就得能调用外部工具——搜索、计算、读写文件、执行代码……但这些工具原本只是普通的 Python 函数。LLM 无法直接"看到"一个 Python 函数，它需要一个结构化的 **工具描述（JSON Schema）** 才知道"有哪些工具、每个工具要什么参数"。
 
 **本章回答的问题是：如何把普通 Python 函数抽象成 Agent 可识别、可描述、可调用的"工具"？**
 
-## 7.2 教学目标
+## 7.2 学习目标
 
 学完本章，你应当能够：
 
@@ -60,6 +60,8 @@ classDiagram
 **解读**：`BaseTool` 定义了所有工具的统一接口（尤其是抽象的 `execute`），`FunctionTool` 是"包装普通函数"的具体实现。`@tool` 装饰器是 `FunctionTool` 的语法糖入口（未在图中画出，因为它返回的就是 `FunctionTool` 实例）。
 
 ## 7.4 源码精读
+
+文件位置：src/scratchagent/tools/_base.py
 
 ### 7.4.1 `BaseTool` —— 统一接口
 
@@ -323,7 +325,7 @@ def function_to_input_schema(func: Any) -> dict[str, Any]:
 3. 写验证代码：
 
 ```python
-from base_module import tool  # base_module 指你新建的 tools/_base.py
+from scratchagent.tools import tool
 import inspect
 
 @tool(name="calculator", description="执行加减乘除运算")

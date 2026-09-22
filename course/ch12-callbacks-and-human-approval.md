@@ -11,7 +11,7 @@ Agent 一旦学会调用工具，就会带来两类新风险：**危险操作不
 
 ---
 
-## 2. 教学目标
+## 2. 学习目标
 
 学完本章，你应当能：
 
@@ -69,8 +69,8 @@ for callback in self.before_tool_callbacks:
 
 回调的返回值是理解本章的钥匙，一句话：**返回 `None` 表示"我不介入，流程照旧"；返回非 `None` 表示"我要改写流程"**。但两类回调"改写"的方向不同：
 
-- **before 回调**返回非 None → 该返回值被包装成 `ToolResult(status="error")`，**跳过**真正的工具执行（源码 `agent.py` L329~345）。
-- **after 回调**返回非 None → 该返回值**替换**原 `ToolResult`（源码 `agent.py` L369~374）。
+- **before 回调**返回非 None → 该返回值被包装成 `ToolResult(status="error")`，**跳过**真正的工具执行（源码 `agent.py` L327~340）。
+- **after 回调**返回非 None → 该返回值**替换**原 `ToolResult`（源码 `agent.py` L367~372）。
 
 ---
 
@@ -143,6 +143,8 @@ stateDiagram-v2
 ---
 
 ## 5. 源码精读
+
+文件位置：src/scratchagent/tools/_callbacks.py
 
 ### 5.1 危险工具名单（L10）
 
@@ -268,11 +270,13 @@ def search_compressor(context: ExecutionContext, tool_result: ToolResult):
 
 目标：**给项目挂上两个回调，验证"拦截"与"压缩"两条链路**。
 
+参考应用示例： example/human_in_loop_agent.py
+
 ### 实验 1：验证审批拦截
 
 ```python
 from scratchagent import Agent
-from scratchagent.tools._callbacks import approval_callback   # 私有模块需全路径导入
+from scratchagent.tools import approval_callback
 
 # 假设 agent 配了一个名为 send_email 的工具
 agent = Agent(

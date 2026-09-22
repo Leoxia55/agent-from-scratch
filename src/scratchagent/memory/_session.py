@@ -21,7 +21,7 @@ class Session(BaseModel):
 
 
 class BaseSessionManager(ABC):
-    """Abstract base class for session management."""
+    """会话管理的抽象基类."""
 
     @abstractmethod
     async def create(
@@ -34,12 +34,12 @@ class BaseSessionManager(ABC):
 
     @abstractmethod
     async def get(self, session_id: str) -> Session | None:
-        """Retrieve a session by ID. Returns None if not found."""
+        """根据 ID 获取会话。未找到则返回 None."""
         pass
 
     @abstractmethod
     async def save(self, session: Session) -> None:
-        """Persist session changes to storage."""
+        """将会话更改持久化保存到存储中."""
         pass
 
     async def get_or_create(
@@ -47,7 +47,7 @@ class BaseSessionManager(ABC):
         session_id: str,
         user_id: str | None = None,
     ) -> Session:
-        """Get existing session or create new one."""
+        """获取现有会话或创建新会话."""
         session = await self.get(session_id)
         if session is None:
             session = await self.create(session_id, user_id)
@@ -65,7 +65,7 @@ class InMemorySessionManager(BaseSessionManager):
         session_id: str,
         user_id: str | None = None,
     ) -> Session:
-        """Create a new session."""
+        """创建一个新的Session."""
         if session_id in self._sessions:
             raise ValueError(f"Session {session_id} already exists")
 
@@ -74,10 +74,10 @@ class InMemorySessionManager(BaseSessionManager):
         return session
 
     async def get(self, session_id: str) -> Session | None:
-        """Retrieve a session by ID."""
+        """通过ID检索一个Session."""
         return self._sessions.get(session_id)
 
     async def save(self, session: Session) -> None:
-        """Save session to storage."""
+        """保持Session."""
         session.updated_at = datetime.now()  # 每次更新都需要修改时间
         self._sessions[session.session_id] = session

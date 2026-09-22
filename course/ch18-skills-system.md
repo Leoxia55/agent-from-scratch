@@ -21,11 +21,11 @@
 
 ---
 
-## 二、教学目标
+## 二、学习目标
 
 学完本章，你能：
 
-1. 说清「渐进式披露」与「一次性加载」的区别，以及为什么前者更省 token、抗干扰；
+1. 理解「渐进式披露」与「一次性加载」的区别，以及为什么前者更省 token、抗干扰；
 2. 写出 `parse_frontmatter`，理解正则如何提取 Markdown 的 YAML 头部；
 3. 写出 `load_skill` / `discover_skills`，理解「目录约定」如何驱动发现；
 4. 理解 `generate_skills_prompt` 生成的提示词结构，以及它和 E2B 沙箱（第 17 章）的衔接；
@@ -126,6 +126,8 @@ flowchart TB
 ---
 
 ## 五、源码精读
+
+文件位置： src/scratchagent/skills.py
 
 ### 5.1 `SkillInfo`（L8~14）
 
@@ -229,6 +231,8 @@ def generate_skills_prompt(skills: list[SkillInfo], sandbox_path: str = "/home/u
 ---
 
 ## 六、动手实验
+
+参考示例： examples/skill_agent.py
 
 ### 实验 1：解析 frontmatter
 

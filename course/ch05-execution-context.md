@@ -6,7 +6,7 @@
 
 **本章回答的问题是：Agent 执行过程中，那些"需要跨步骤保持"的状态（执行 ID、事件历史、当前步数、最终结果、会话/记忆/沙箱句柄、转交目标……）该放在哪里、如何组织？**
 
-## 5.2 教学目标
+## 5.2 学习目标
 
 学完本章，你应当能够：
 
@@ -16,6 +16,7 @@
 4. **理解** `status: Literal["complete", "pending", "error"]` 三态如何支撑"人工审批（HITL）"流程。
 
 ## 5.3 原理讲解
+
 
 ### 5.3.1 为什么需要"执行上下文"
 
@@ -74,6 +75,8 @@ classDiagram
 
 ## 5.4 源码精读
 
+文件位置：src/scratchagent/context.py
+
 ### 5.4.1 `ExecutionContext` —— 状态存储中心
 
 ```python
@@ -95,7 +98,7 @@ class ExecutionContext:
 
     # 代码执行环境 "Sandbox" 沙箱
     code_env: Any | None = None
-    # True only when this Agent created the sandbox and owns its cleanup.
+    # 仅当此智能体创建该沙箱并拥有其清理权限时，值为真.
     code_env_owned: bool = False
     # Multi-Agent 中 转移模式
     transfer_to: str | None = None
@@ -192,8 +195,8 @@ class ToolConfirmation(BaseModel):
 2. 复用第 4 章的 `types.py`，写一段验证代码：
 
 ```python
-from context import ExecutionContext, AgentResult, PendingToolCall, ToolConfirmation  # context 指你新建的 context.py
-from types import Event, Message, ToolCall  # types 指第 4 章新建的 types.py
+from scratchagent.context import ExecutionContext, AgentResult, PendingToolCall, ToolConfirmation  # context 指你新建的 context.py
+from scratchagent.types import Event, Message, ToolCall  # types 指第 4 章新建的 types.py
 
 # 1. 创建执行上下文，模拟一次执行
 ctx = ExecutionContext()

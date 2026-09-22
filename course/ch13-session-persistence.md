@@ -11,7 +11,7 @@
 
 ---
 
-## 2. 教学目标
+## 2. 学习目标
 
 学完本章，你应当能：
 
@@ -132,6 +132,8 @@ sequenceDiagram
 
 ## 5. 源码精读
 
+文件位置： src/scratchagent/memory/_session.py
+
 ### 5.1 数据模型：`Session`（L12~20）
 
 ```python
@@ -238,6 +240,8 @@ if session and self.session_manager:
 
 ### 实验 1：验证会话跨 run 恢复
 
+参考案例： examples/session_agent.py
+
 ```python
 import asyncio
 from scratchagent import Agent
@@ -302,8 +306,10 @@ class JsonFileSessionManager(BaseSessionManager):
         # 把 session 序列化写入 JSON 文件（省略）
         ...
 
-# 使用方式与 InMemorySessionManager 完全一致
-agent = Agent(model=client, session_manager=JsonFileSessionManager("sessions.json"))
+# 使用方式与 InMemorySessionManager 完全一致， 指定json 文件目录
+agent = Agent(model=client, session_manager=JsonFileSessionManager("./data/sessions"))
+
+参考答案，请到学习群获取！
 ```
 
 **验证点**：这是 3.3 节"抽象基类 + 模板方法"价值的落地——你只实现 `create`/`get`/`save` 三个方法，`get_or_create` 和 `Agent` 的调用逻辑**零改动**。

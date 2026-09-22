@@ -11,7 +11,7 @@
 
 ---
 
-## 2. 教学目标
+## 2. 学习目标
 
 学完本章，你应当能：
 
@@ -113,6 +113,8 @@ sequenceDiagram
 
 ## 5. 源码精读
 
+文件位置：src/scratchagent/memory/_long_term.py  和 ../tools/_memory_tool.py
+
 ### 5.1 数据结构：`TaskMemory` 与 `DuplicateCheckResult`（L21~42）
 
 ```python
@@ -154,7 +156,7 @@ def __init__(self, llm_client: LlmClient, collection_name: str = "task_memories"
 逐点讲解：
 
 1. **`chromadb.Client()`**（L89）：这是 ChromaDB 的**内存模式**——数据存在进程内，进程退出即丢。源码 L88 注释掉的 `PersistentClient(path="./.memory_db")` 是持久化方案，作者刻意选内存模式做教学演示。
-2. **`OpenAIEmbeddingFunction`**（L90）：ChromaDB 内置的 embedding 函数，与第 11 章 `rag.py` 用同一个 `text-embedding-3-small` 模型。注意这里**没有传 api_key/api_base**（L91~92 注释掉了），这是因为它依赖环境变量自动配置。
+2. **`OpenAIEmbeddingFunction`**（L90）：ChromaDB 内置的 embedding 函数，与第 11 章 `rag.py` 用同一个 `text-embedding-3-small`注：截至202609月份 OpenRouter 不再提供该模型，故修改了模型：perplexity/pplx-embed-v1-0.6b 模型。注意这里**没有传 api_key/api_base**（L91~92 注释掉了），这是因为它依赖环境变量自动配置。
 3. **`cast(Any, embedding_fn)`**（L97）：`embedding_function` 参数的静态类型与 `OpenAIEmbeddingFunction` 的实际类型不完全匹配，用 `cast` 显式声明"这里我确定是对的"。注意 `cast` **只在静态类型检查时生效，运行时不做任何转换**——它是给 mypy 看的"类型断言"，不影响实际执行。
 
 ### 5.3 抽取：`_extract_memory`（L100~115）
@@ -302,6 +304,8 @@ class MemoryTool(BaseTool):
 ---
 
 ## 6. 动手实验
+
+参考示例： examples/memory_agent.py
 
 目标：**给项目加一个"跨任务记忆"的最小用例**，验证经验抽取与自动注入。
 

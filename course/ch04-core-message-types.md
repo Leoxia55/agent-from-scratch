@@ -6,7 +6,7 @@
 
 **本章回答的问题是：如何用一套统一的数据类型，把 Agent 执行过程中产生的所有信息都"装"起来？**
 
-## 4.2 教学目标
+## 4.2 学习目标
 
 学完本章，你应当能够：
 
@@ -21,10 +21,10 @@
 
 Agent 循环里，信息形态非常杂。用自然语言描述就是：
 
-- 用户发来一句话 → 这是**文本**；
-- 模型决定"我要调一个计算器工具" → 这是**一个工具调用请求**（含工具名 + 参数）；
-- 工具执行完返回"结果是 42" → 这是**一个工具结果**；
-- 几轮之后，系统想把前面的历史压缩成一段摘要 → 这是**一个摘要**。
+- 用户发来一句话 → 这是**文本**； `Message`
+- 模型决定"我要调一个计算器工具" → 这是**一个工具调用请求**（含工具名 + 参数）；`ToolCall`
+- 工具执行完返回"结果是 42" → 这是**一个工具结果**； `ToolResult`
+- 几轮之后，系统想把前面的历史压缩成一段摘要 → 这是**一个摘要**。 `SummaryMessage`
 
 如果每种信息各用各的结构，Agent 主循环就得写一堆 `if isinstance(...)` 分支去区分处理。`scratchagent` 的做法是：**把 4 种消息统一抽象成有共同 `type` 字段的 Pydantic 模型，再用一个联合类型别名把它们串起来**。
 
@@ -67,16 +67,19 @@ classDiagram
     }
 
     Event *-- Message : 装填之一
-    Event *-- ToolCall : 装填之一
-    Event *-- ToolResult : 装填之一
-    Event *-- SummaryMessage : 装填之一
+    Event *-- ToolCall : 装填之二
+    Event *-- ToolResult : 装填之三
+    Event *-- SummaryMessage : 装填之四
 ```
 
 **解读**：注意这张图**故意没有**画出 `ContentItem` 这个节点——因为它不是类，而是一个**联合类型别名**（`Message | ToolCall | ToolResult | SummaryMessage`），无法用类图里的继承或组合关系准确表达。图中用 `Event *-- ...` 组合箭头表达"`Event.content` 可以装填这四种消息中的任意一种"这一实质关系。
 
 ## 4.4 源码精读
 
+文件位置：src/scratchagent/tpyes.py
+
 ### 4.4.1 `Message` —— 纯文本消息
+
 
 ```python
 class Message(BaseModel):
@@ -196,7 +199,7 @@ class Event(BaseModel):
 
 ```python
 from collections.abc import Sequence
-from types import Message, ToolCall, ToolResult, SummaryMessage, Event  # 这里 types 指你新建的 types.py
+from scratchagent.types import Message, ToolCall, ToolResult, SummaryMessage, Event  
 
 # 构造一条完整的执行记录：用户提问 → 模型调工具 → 工具返回 → 模型总结
 evt = Event(

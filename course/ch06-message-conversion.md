@@ -6,7 +6,7 @@
 
 **本章回答的问题是：如何在自己的消息类型和 LLM API 的消息格式之间做双向转换？**
 
-## 6.2 教学目标
+## 6.2 学习目标
 
 学完本章，你应当能够：
 
@@ -51,6 +51,8 @@ flowchart LR
 **解读**：`build_messages` 和 `_parse_response` 是两个方向相反的转换函数，构成"内部模型 ↔ 外部协议"的对称边界。中间调用 `acompletion` 时传的是 API 格式，拿到的是原始响应对象，再解析回内部模型。
 
 ## 6.4 源码精读
+
+文件位置：src/scratchagent/llm/_client.py
 
 ### 6.4.1 `build_messages` —— 出去的方向
 
@@ -189,8 +191,8 @@ def _parse_response(response: Any) -> LlmResponse:
 2. 写一段验证代码，构造一个包含"用户提问 + 工具调用 + 工具结果"的 `LlmRequest`，观察转换结果：
 
 ```python
-from llm_client import LlmRequest, build_messages  # llm_client 指你新建的 llm/_client.py
-from types_module import Message, ToolCall, ToolResult  # types_module 指第 4 章新建的 types.py（勿与标准库 types 混淆）
+from scratchagent.llm import LlmRequest, build_messages  # llm_client 指你新建的 llm/_client.py
+from scratchagent import Message, ToolCall, ToolResult  # types_module 指第 4 章新建的 types.py（勿与标准库 types 混淆）
 
 req = LlmRequest(
     instructions=["你是一个助手"],

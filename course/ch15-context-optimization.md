@@ -11,7 +11,7 @@ Agent 跑得越久，`context.events` 里的内容就越长——几十轮对话
 
 ---
 
-## 2. 教学目标
+## 2. 学习目标
 
 学完本章，你应当能：
 
@@ -133,12 +133,14 @@ flowchart LR
 
 ## 5. 源码精读
 
+文件位置：src/scratchagent/memory/_context_optimizer.py
+
 ### 5.1 工厂函数：`create_optimizer_callback`（L17~35）
 
 ```python
 def create_optimizer_callback(apply_optimization, threshold: int = 50000):
     async def callback(context, request) -> LlmResponse | None:
-        token_count = count_tokens(request)          # L24
+        token_count = count_tokens(request)           # L24
         if token_count < threshold:
             return None                               # L26~27：未超限，放行
         result = apply_optimization(context, request) # L30：执行优化
@@ -323,7 +325,7 @@ request = LlmRequest(
     instructions=["你是助手"],
     contents=[Message(role="user", content="你好" * 100)],  # 200 字符（"你好"为 2 字符）
 )
-print(count_tokens(request))  # 期望一个合理的 token 数（中文约 1 字 ≈ 1~2 token）
+print(count_tokens(request))  # 期望一个合理的 token 数（中文约 1 字 ≈ 1~2 token）,测试结果 111
 ```
 
 **验证点**：理解 `count_tokens` 的估算逻辑，确认它返回一个正数且随内容增长而增长。

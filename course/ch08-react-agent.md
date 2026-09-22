@@ -8,7 +8,7 @@
 
 > 这是全教程的**第一个里程碑**（第二个是第 20 章多智能体）。学完本章，你将第一次拥有一个完整可运行的 Agent。
 
-## 8.2 教学目标
+## 8.2 学习目标
 
 学完本章，你应当能够：
 
@@ -85,6 +85,8 @@ sequenceDiagram
 **解读**：`run()` 是外壳，内部是一个 `while` 循环反复调用 `step()`。`step()` 做一次"准备 → 思考 →（可能）行动"，把结果写回 `context.events`。**循环体内的关键动作是 `run()` 每轮都调 `_is_final_response` 检查最新事件**，一旦判定为终态就提取 `final_result` 并退出；否则继续下一轮。`before_llm_callbacks` 的短路（直接提供响应、跳过真实 LLM 调用）用 `Note` 标注。
 
 ## 8.4 源码精读
+
+文件位置：src/scratchagent/agent.py
 
 ### 8.4.1 `run()` —— 主循环
 
@@ -377,9 +379,9 @@ def _is_final_response(self, event: Event) -> bool:
 
 ```python
 import asyncio
-from agent_module import Agent  # agent_module 指你新建的 agent.py
-from llm_module import LlmClient, resolve_model_config, Provider
-from tools_module import FunctionTool, calculator
+from scratchagent import Agent  # agent_module 指你新建的 agent.py
+from scratchagent.llm import LlmClient, resolve_model_config, Provider
+from scratchagent.tools import FunctionTool, calculator
 
 async def main():
     client = LlmClient(default_config=resolve_model_config(
@@ -389,7 +391,7 @@ async def main():
         tools=[FunctionTool(calculator)],
         instruction="你是一个助手，需要计算时调用 calculator 工具。",
     )
-    result = await agent.run("3.5 乘以 4 等于多少？")
+    result = await agent.run("45738 乘以 238 等于多少？")
     print("输出:", result.output)
     print("状态:", result.status)
     print("步数:", result.context.current_step)

@@ -21,11 +21,11 @@
 
 ---
 
-## 二、教学目标
+## 二、学习目标
 
 学完本章，你能：
 
-1. 说清「工作流继承 `Agent`」这个设计的含义与好处（可嵌套、可替换）；
+1. 理解「工作流继承 `Agent`」这个设计的含义与好处（可嵌套、可替换）；
 2. 写出 `SequentialWorkFlow.run`，理解「上下文串接」的机制；
 3. 写出 `ParallelWorkFlow.run`，理解「并发执行 + 事件合并 + 输出合并」三步；
 4. 理解 `ParallelWorkFlow` 共享 `context` 的**竞态风险**（为什么它要切片去重 user 事件）；
@@ -257,6 +257,8 @@ class LoopWorkFlow(Agent):
 ---
 
 ## 六、动手实验
+
+参考示例： examples/sequential_wf_agent.py parallel_wf_agent.py loop_wf_agent.py
 
 ### 实验 1：理解「工作流继承 Agent」——用 run 签名统一调用
 

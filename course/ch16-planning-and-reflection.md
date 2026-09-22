@@ -1,7 +1,7 @@
 # 第 16 章 规划与反思
 
 > 本章源码精读模块：`orchestration/_planning_reflection.py`（78 行）
-> 配套符号：`tools._base` 的 `@tool` 装饰器、`Task` 模型、`Literal` 状态枚举
+> 配套代码：`tools._base` 的 `@tool` 装饰器、`Task` 模型、`Literal` 状态枚举
 
 ---
 
@@ -21,7 +21,7 @@
 
 ---
 
-## 二、教学目标
+## 二、学习目标
 
 学完本章，你能：
 
@@ -118,6 +118,8 @@ stateDiagram-v2
 
 ## 五、源码精读
 
+文件位置：orchestration/_planning_reflection.py
+
 ### 5.1 `Task` 模型与 `__str__`（L10~21）
 
 ```python
@@ -203,6 +205,8 @@ from ._planning_reflection import create_tasks, reflection
 ---
 
 ## 六、动手实验
+
+参考示例：examples/planning_reflection_agent.py
 
 ### 实验 1：观察 `Task` 的渲染与校验
 

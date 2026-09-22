@@ -19,11 +19,11 @@
 
 ---
 
-## 二、教学目标
+## 二、学习目标
 
 学完本章，你能：
 
-1. 说清 Docker 容器与 Firecracker Micro-VM 在**隔离强度**上的本质区别；
+1. 理解 Docker 容器与 Firecracker Micro-VM 在**隔离强度**上的区别；
 2. 写出 `create_e2b_sandbox`，理解「延迟导入 + 环境变量解析 + 失败归一化」三重设计；
 3. 理解「沙箱作为上下文依赖注入」的架构——工具不自己创建沙箱，而是从 `context.code_env` 取；
 4. 说清三个代码执行工具（`execute_python_in_e2b` / `base_e2b_tool` / `upload_file_to_e2b`）各自的职责边界；
@@ -146,6 +146,8 @@ flowchart LR
 
 ## 五、源码精读
 
+文件位置： src/scratchagent/sandbox/_e2b_sandbox.py
+
 ### 5.1 `create_e2b_sandbox`（`_e2b_sandbox.py` L17~52）
 
 ```python
@@ -164,7 +166,7 @@ def create_e2b_sandbox(
             "E2B_API_KEY is not configured; set it in the environment or .env."
         )
     if timeout <= 0:
-        raise ValueError("E2B sandbox timeout must be positive seconds.")
+        raise ValueError("E2B 沙箱超时时间必须为正秒数.")
 
     try:
         from e2b_code_interpreter import Sandbox
@@ -239,6 +241,8 @@ async def execute_python_in_e2b(context: ExecutionContext, code: str) -> str:
 ---
 
 ## 六、动手实验
+
+参考示例： examples/e2b_agent.py
 
 ### 实验 1：创建与销毁沙箱（无需真实 E2B 也能理解生命周期）
 

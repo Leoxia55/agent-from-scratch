@@ -13,8 +13,8 @@ from pydantic import BaseModel, Field
 class Message(BaseModel):
     """在会话中的一个文本消息 Message"""
 
-    type: Literal["message"] = "message"
-    role: Literal["system", "user", "assistant"]
+    type: Literal["message"] = "message" # 这个值只能是 'message'
+    role: Literal["system", "user", "assistant"] # 只能三选一
     content: str
 
 

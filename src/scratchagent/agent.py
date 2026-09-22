@@ -474,7 +474,7 @@ class Agent:
         return not has_tool_calls and not has_tool_results
 
     def _extract_final_result(self, event: Event) -> Any:
-        """Extract the final result from an event."""
+        """从事件中提取最终结果."""
         if self.output_tool_name:
             for item in event.content:
                 if (
@@ -494,7 +494,7 @@ class Agent:
         self,
         tools: Iterable[BaseTool | Callable[..., Any]],
     ) -> list[BaseTool]:
-        """Prepare the tools list, wrapping plain callables as FunctionTool objects."""
+        """准备工具清单，将普通可调用对象封装为 FunctionTool 对象."""
         prepared_tools: list[BaseTool] = []
         for candidate in tools:
             if isinstance(candidate, BaseTool):

@@ -11,7 +11,7 @@
 
 ---
 
-## 2. 教学目标
+## 2. 学习目标
 
 学完本章，你应当能：
 
@@ -67,7 +67,7 @@ result = await agent.run("北京今天天气如何？")
 
 ### 3.3 一条加工链：从 Pydantic 模型到工具定义
 
-`output_type` 到最终工具的完整加工发生在 `_setup_tools`（`agent.py` L517~546），分四步：
+`output_type` 到最终工具的完整加工发生在 `_setup_tools`（`agent.py` L510~540），分四步：
 
 ```
 WeatherReport (BaseModel)
@@ -97,12 +97,12 @@ WeatherReport (BaseModel)
 flowchart TD
     A["Agent.__init__<br/>output_type: type[BaseModel] | None"] -->|"非 None"| B["_setup_tools()<br/>L517"]
     B --> C["output_schema = output_type.model_json_schema()<br/>L518"]
-    C --> D["弹出 'title' / '$defs'<br/>L519-520"]
-    D --> E["内联构造参数<br/>{\"type\":\"object\", properties.output, required=['output']}<br/>L525-529"]
-    E --> F["format_tool_definition('final_answer', desc, 上述参数)<br/>L522"]
-    F --> G["FunctionTool(func=_parse_output, name='final_answer')<br/>L539"]
-    G --> H["prepared_tools.append(final_answer_tool)<br/>L545"]
-    H --> I["self.output_tool_name = 'final_answer'<br/>L546"]
+    C --> D["弹出 'title' / '$defs'<br/>L512-513"]
+    D --> E["内联构造参数<br/>{&quot;type&quot;:&quot;object&quot;, properties.output, required=['output']}<br/>L519-523"]
+    E --> F["format_tool_definition('final_answer', desc, 上述参数)<br/>L515"]
+    F --> G["FunctionTool(func=_parse_output, name='final_answer')<br/>L532"]
+    G --> H["prepared_tools.append(final_answer_tool)<br/>L538"]
+    H --> I["self.output_tool_name = 'final_answer'<br/>L539"]
     I --> J["LLM 侧: tool_choice='required'<br/>L444-445"]
 ```
 
@@ -123,11 +123,13 @@ stateDiagram-v2
     Terminal --> [*]: _extract_final_result() 取 content[0]
 ```
 
-**解读**：这张图揭示结构化输出的两大安全网——**Pydantic 校验**（`_parse_output` 内 `model_validate`，L534~537）和**终止判定**（`_is_final_response` 只看 `final_answer` 的 `ToolResult` 是否 `success`，L469~477）。一旦模型生成的 JSON 不合 schema，`act()` 会把错误作为 `ToolResult(status="error")` 回灌给模型，模型在下一次 `step()` 里修正重试，形成自我修复闭环。
+**解读**：这张图揭示结构化输出的两大安全网——**Pydantic 校验**（`_parse_output` 内 `model_validate`，L527~530）和**终止判定**（`_is_final_response` 只看 `final_answer` 的 `ToolResult` 是否 `success`，L460~470）。一旦模型生成的 JSON 不合 schema，`act()` 会把错误作为 `ToolResult(status="error")` 回灌给模型，模型在下一次 `step()` 里修正重试，形成自我修复闭环。
 
 ---
 
 ## 5. 源码精读
+
+文件位置： src/scratchagent/agent.py
 
 ### 5.1 入口：`__init__` 接收 `output_type`
 
@@ -144,15 +146,15 @@ self.output_tool_name: str | None = None
 
 `output_tool_name` 初始为 `None`，它是一把"开关"——只要它是 `None`，后续所有终止/取值逻辑都走自由输出分支；一旦被赋值为 `"final_answer"`，就走结构化输出分支。**这一对字段的协作，是理解全章的钥匙**。
 
-### 5.2 核心：`_setup_tools` 动态生成 `final_answer`（L517~546）
+### 5.2 核心：`_setup_tools` 动态生成 `final_answer`（L510~539）
 
 ```python
 if self.output_type is not None:
-    output_schema = self.output_type.model_json_schema()   # L518
-    output_schema.pop("title", None)                        # L519
-    output_schema.pop("$defs", None)                        # L520
+    output_schema = self.output_type.model_json_schema()   # L511
+    output_schema.pop("title", None)                        # L512
+    output_schema.pop("$defs", None)                        # L513
 
-    tool_definition = format_tool_definition(               # L522
+    tool_definition = format_tool_definition(               # L515
         "final_answer",
         "Return the final structured answer matching the required schema.",
         {
@@ -162,37 +164,37 @@ if self.output_type is not None:
         },
     )
 
-    captured_type = self.output_type                        # L532
+    captured_type = self.output_type                        # L525
 
-    def _parse_output(output) -> Any:                       # L534
+    def _parse_output(output) -> Any:                       # L527
         if isinstance(output, dict):
             return captured_type.model_validate(output)
         return output
 
-    final_answer_tool = FunctionTool(                       # L539
+    final_answer_tool = FunctionTool(                       # L532
         func=_parse_output,
         name="final_answer",
         description="Return the final structured answer matching the required schema.",
         tool_definition=tool_definition,
     )
-    prepared_tools.append(final_answer_tool)                # L545
-    self.output_tool_name = "final_answer"                  # L546
+    prepared_tools.append(final_answer_tool)                # L538
+    self.output_tool_name = "final_answer"                  # L539
 ```
 
 逐点讲解：
 
-1. **`model_json_schema()`**（L518）是 Pydantic v2 的标准方法，返回符合 JSON Schema 规范的对象。项目锁定 `pydantic>=2.0.0`（见 `pyproject.toml` L20），所以这里是 v2 API。
-2. **`pop("title", None)` / `pop("$defs", None)`**（L519-520）是**防御性清理**：`model_json_schema()` 默认会附带 `title`（模型名）；当模型含嵌套引用时还会生成 `$defs`（嵌套模型定义）。这两个 key 会干扰 function calling 的参数结构，故一并弹出。用 `pop(key, None)` 而非 `del`，是为了在 key 不存在时（如无嵌套的简单模型没有 `$defs`）也不抛异常。
-3. **`captured_type = self.output_type`**（L532）是**闭包捕获**的细节：`_parse_output` 定义在 `_setup_tools` 内部，本可直接引用 `self.output_type`，但这里先捕获到局部变量 `captured_type`，让 `_parse_output` 成为一个**只依赖局部变量、不依赖 `self` 的纯函数**，语义更清晰、更易测试。
-4. **`_parse_output`**（L534~537）：模型调用 `final_answer` 时，传入的 `output` 参数是一个 dict，`model_validate(output)` 把它转成真正的 `WeatherReport` 实例；若已是非 dict（异常路径），则原样返回。
+1. **`model_json_schema()`**（L511）是 Pydantic v2 的标准方法，返回符合 JSON Schema 规范的对象。项目锁定 `pydantic>=2.0.0`（见 `pyproject.toml` L20），所以这里是 v2 API。
+2. **`pop("title", None)` / `pop("$defs", None)`**（L512-513）是**防御性清理**：`model_json_schema()` 默认会附带 `title`（模型名）；当模型含嵌套引用时还会生成 `$defs`（嵌套模型定义）。这两个 key 会干扰 function calling 的参数结构，故一并弹出。用 `pop(key, None)` 而非 `del`，是为了在 key 不存在时（如无嵌套的简单模型没有 `$defs`）也不抛异常。
+3. **`captured_type = self.output_type`**（L525）是**闭包捕获**的细节：`_parse_output` 定义在 `_setup_tools` 内部，本可直接引用 `self.output_type`，但这里先捕获到局部变量 `captured_type`，让 `_parse_output` 成为一个**只依赖局部变量、不依赖 `self` 的纯函数**，语义更清晰、更易测试。
+4. **`_parse_output`**（L527~530）：模型调用 `final_answer` 时，传入的 `output` 参数是一个 dict，`model_validate(output)` 把它转成真正的 `WeatherReport` 实例；若已是非 dict（异常路径），则原样返回。
 5. **`tool_definition` 显式传入**：与第 7 章 `FunctionTool(calculator)` 的自动 schema 推导不同，这里**手动构造** `tool_definition`，因为 schema 已经在上一步加工好了，无需再从函数签名推导。
 
 > **要点**：`final_answer` 工具的 `func` 不是去"执行什么业务"，而是**充当一个校验器**——它的输出就是最终答案本身。这是"工具即约束"的典型用法。
 
-### 5.3 强制调用：`_prepare_llm_request` 的 `tool_choice`（L444~450）
+### 5.3 强制调用：`_prepare_llm_request` 的 `tool_choice`（L437~443）
 
 ```python
-# agent.py L444-450
+# agent.py L437-443
 if self.output_tool_name:
     tool_choice = "required"
 elif llm_tools:
@@ -203,7 +205,7 @@ else:
 
 当 `output_tool_name` 非空时，`tool_choice` 被设为 `"required"`——**告诉模型"这一轮必须调用一个工具"**。注意：`"required"` 只强制"必须调用某个工具"，并不直接点名 `final_answer`；模型是靠 `final_answer` 工具 description 里的"Return the final structured answer..."语义，自行判断何时该调用它来交付结果。这是把"自由生成"转成"强制结构化"的落点。
 
-### 5.4 终止判定：`_is_final_response`（L467~481）
+### 5.4 终止判定：`_is_final_response`（L460~474）
 
 ```python
 def _is_final_response(self, event: Event) -> bool:
@@ -217,9 +219,9 @@ def _is_final_response(self, event: Event) -> bool:
                 return True
         return False
 
-    has_tool_calls = any(isinstance(c, ToolCall) for c in event.content)       # L479
-    has_tool_results = any(isinstance(c, ToolResult) for c in event.content)   # L480
-    return not has_tool_calls and not has_tool_results                          # L481
+    has_tool_calls = any(isinstance(c, ToolCall) for c in event.content)       # L472
+    has_tool_results = any(isinstance(c, ToolResult) for c in event.content)   # L473
+    return not has_tool_calls and not has_tool_results                          # L474
 ```
 
 **两个分支的对比**：
@@ -227,7 +229,7 @@ def _is_final_response(self, event: Event) -> bool:
 - **自由输出**：终止条件是"既没有 tool call、也没有 tool result"，即模型这轮只回了纯文本。
 - **结构化输出**：终止条件是"出现了一个 `name==final_answer` 且 `status==success` 的 `ToolResult`"。注意它**必须 `status=="success"`**——如果 `_parse_output` 校验失败，`act()` 里会记录 `status="error"`，此时 `_is_final_response` 返回 `False`，循环继续，模型重试。
 
-### 5.5 取值：`_extract_final_result`（L483~498）
+### 5.5 取值：`_extract_final_result`（L476~491）
 
 ```python
 def _extract_final_result(self, event: Event) -> Any:
@@ -264,6 +266,8 @@ def _extract_final_result(self, event: Event) -> Any:
 ```python
 from pydantic import BaseModel
 from scratchagent import Agent
+from scratchagent.llm import LlmClient, resolve_model_config, Provider
+from scratchagent.tools import FunctionTool, search_web
 
 class WeatherReport(BaseModel):
     city: str
@@ -272,10 +276,18 @@ class WeatherReport(BaseModel):
 
 async def main():
     # client = 你的 LlmClient 实例（见第 2 章）
-    agent = Agent(model=client, instruction="你是天气助手", output_type=WeatherReport)
+    client = LlmClient(default_config=resolve_model_config(
+        provider=Provider.OPENAI_COMPAT, model="<你的模型名>"))    
+    agent = Agent(
+        model=client,
+        tools=[FunctionTool(search_web)], 
+        instruction="你是天气助手", 
+        output_type=WeatherReport)
     result = await agent.run("北京今天天气如何？")
     print(type(result.output))      # 期望 <class 'WeatherReport'>
     print(result.output.city)       # 期望 "北京"
+    print("步数:", result.context.current_step)
+    print(result.output)            # 期望 "city='北京' temperature_c=30.0 summary='今天晴到多云..."
     assert isinstance(result.output, WeatherReport)
 
 if __name__ == "__main__":
@@ -315,7 +327,7 @@ schema.pop("$defs", None)
 print("清理后 keys:", list(schema.keys()))   # 只剩 type/properties/required 等
 ```
 
-观察嵌套模型 `Inner` 会出现在 `$defs` 里——这正是源码 L520 要 `pop("$defs")` 的原因。
+观察嵌套模型 `Inner` 会出现在 `$defs` 里——这正是源码 L513 要 `pop("$defs")` 的原因。
 
 ---
 

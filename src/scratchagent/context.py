@@ -29,7 +29,7 @@ class ExecutionContext:
 
     # 代码执行环境 "Sandbox" 沙箱
     code_env: Any | None = None
-    # True only when this Agent created the sandbox and owns its cleanup.
+    # 仅当此智能体创建该沙箱并拥有其清理权限时，值为真.
     code_env_owned: bool = False
     # Multi-Agent 中 转移模式
     transfer_to: str | None = None

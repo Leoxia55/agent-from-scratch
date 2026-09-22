@@ -11,13 +11,13 @@
 
 ---
 
-## 2. 教学目标
+## 2. 学习目标
 
 学完本章，你应当能：
 
 1. **写出** `rag.py` 的三个函数，并说清它们各自的职责边界（切块、向量化、检索）；
 2. **解释** 为什么用 `cosine_similarity` 而不是直接比字符串，以及 `argsort()[-top_k:][::-1]` 这段倒序取 top-k 的技巧；
-3. **定位** 本项目 RAG 的两个关键技术选型：嵌入用 OpenAI `text-embedding-3-small`（经 OpenRouter 中转）、相似度用 `sklearn.metrics.pairwise.cosine_similarity`（而非 faiss）；
+3. **定位** 本项目 RAG 的两个关键技术选型：嵌入用 OpenAI `text-embedding-3-small`（经 OpenRouter 中转）如果不行，用EMBEDDING_MODEL=perplexity/pplx-embed-v1-0.6b、相似度用 `sklearn.metrics.pairwise.cosine_similarity`（而非 faiss）；
 4. **指出** `SearchResult` 这个 `TypedDict` 的引入动机，以及它对下游类型安全的意义。
 
 ---
@@ -59,7 +59,7 @@ similarities = cosine_similarity(query_embedding, chunk_embeddings)[0]  # 语义
 
 核心在于：embedding 模型把**语义**编码进了向量，余弦相似度衡量的是**向量方向**的一致性（值域 [-1, 1]，越接近 1 越相似），与具体用词无关。
 
-### 3.3 两个关键选型：为什么是 sklearn 和 text-embedding-3-small
+### 3.3 两个关键选型：为什么是 sklearn 和 text-embedding-3-small / perplexity/pplx-embed-v1-0.6b
 
 | 选型 | 本项目用 | 常见替代 | 取舍理由 |
 |---|---|---|---|
@@ -103,6 +103,8 @@ flowchart TD
 ---
 
 ## 5. 源码精读
+
+文件位置： src/scratchagent/rag.py
 
 ### 5.1 数据结构：`SearchResult`（L13~17）
 
@@ -231,6 +233,8 @@ with patch("scratchagent.rag.get_embeddings", return_value=np.array([[1.0, 0.0]]
 **验证点**：`top_k=2` 时返回 2 个结果，且按相似度降序；`results[0]["similarity"] >= results[1]["similarity"]`。
 
 ### 实验 3（进阶）：接入真实 Agent
+
+注：实际参考案例 examples/rag_agent.py
 
 把 `vector_search` 的结果拼进 Agent 的 instruction，观察"私有知识"如何进入上下文：
 

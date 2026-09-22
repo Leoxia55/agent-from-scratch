@@ -21,7 +21,7 @@
 
 ---
 
-## 二、教学目标
+## 二、学习目标
 
 学完本章，你能：
 
@@ -55,7 +55,7 @@ Transfer 靠 `context.transfer_to` 这个字段在 Agent 之间「接力」：
 当前 Agent（路由）
    ↓ 模型调用 transfer_to_agent(agent_name="技术支持")
    ↓ 工具内部：context.transfer_to = "技术支持"
-   ↓ 主循环 L200 检测到 transfer_to 非空
+   ↓ 主循环  检测到 transfer_to 非空
    ↓ 复位 context.transfer_to = None（防止死循环）
    ↓ _find_agent("技术支持") 找到目标
    ↓ await target.run(context=context)  ← 递归转交，共享同一 context
@@ -239,6 +239,8 @@ def _find_in_subtree(self, name: str) -> Agent | None:
 ---
 
 ## 六、动手实验
+
+参考示例： examples/transfer_to_agent.py
 
 ### 实验 1：观察 `create_transfer_tool` 生成的工具结构
 

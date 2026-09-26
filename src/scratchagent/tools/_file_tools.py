@@ -88,7 +88,7 @@ def list_files(path: str = ".") -> str:
 
     result: str = f"Directory: {directory}\n"
     for name in dirs + files:
-        result += f"  {item}\n"
+        result += f"  {name}\n"
 
     return result
 
